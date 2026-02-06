@@ -1,0 +1,83 @@
+data:
+  region:
+    name: "central_pacific"
+    lat_range: [-10, 10]   # equatorial band
+    lon_range: [160, 220]  # 160°E–220°E (~ -140°W)
+    depth_levels: [0, 10]  # surface to 10th level (~100–150m)
+
+  spatial_crop: [50, 150, 100, 250]  #Central Pacific# full domain (still required) # (y_start, y_end, x_start, x_end)
+  window: 
+    input_steps: 6            # number of input time steps for the model (LSTM sequence len)
+    pred_steps: 1  
+  tracers:
+    paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_T_3D.nc"
+    variables: ["mytrc"]
+  neighbors:
+    velocity_paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_U_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_V_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_W_3D.nc"
+    u_var: "umo"
+    v_var: "vmo"
+    w_var: "wmo"
+  coords:
+    time: "time_counter"
+    depth: "z"
+    y: "y"
+    x: "x"
+  mask:
+    path: null
+    var: null
+  in_steps: 8
+  lead_time: 1 # how many steps ahead to predict
+  stride: 1 # how much to slide the window
+  norm_stats_path: "artifacts/norm_stats.json"
+  include_current_tracer: true
+  norm:
+    compute: true
+    save_path: "runs/norm_stats.json"
+model:
+  type: "cnnlstm"
+  spatial_mode: "2d"
+  in_channels: null
+  hidden_channels: 64
+  enc_channels: [64, 128]
+  kernel_size: 3
+  convlstm_layers: 1
+  dropout: 0.1
+  hidden_dim: 64
+  depth_channels: 75
+training:
+  device: "cpu"
+  seed: 42
+  epochs: 50
+  batch_size: 4
+  num_workers: 0
+  lr: 1e-4
+  val_fraction: 0.1
+
+  # logging & checkpointing
+  log_dir: "./logs"
+  checkpoint_dir: "./checkpoints"
+  experiment_name: "ocean_transport_baseline"
+  output_dir: "artifacts/"
+
+  # resume training from checkpoint
+  resume_from: ""  # or path to checkpoint if resuming
+
+#train:
+#  batch_size: 4
+#  epochs: 50
+#  lr: 2.0e-4
+#  weight_decay: 1.0e-6
+#  grad_clip: 1.0
+#  num_workers: 2
+#  ckpt_dir: "runs"
+#  amp: true
+#  early_stop_patience: 8
+#  device: "cuda"
+io:
+  log_interval: 50
+  save_every: 1
+  predict_out: "runs/preds.nc"

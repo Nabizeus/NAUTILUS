@@ -1,0 +1,95 @@
+data:
+  regions:
+  - name: "North_Brazil"
+    x_range: [240, 271] #x_range: [253, 258]
+    y_range: [135, 166] #y_range: [148, 153]
+    z_range: [300, 400] # Off the coast of northern Brazil IDX 37
+    mix_layer: "200 m"
+  - name: "South_Brazil"
+    x_range: [255, 270] #x_range: [260, 265]
+    y_range: [97, 112] #y_range: [102, 107]
+    z_range: [300, 400] # Off the coast of southern Brazil IDX 37
+    mix_layer: "200 m"
+  - name: "Ross_Sea"
+    x_range: [142, 167] #x_ange: [152, 157]
+    y_range: [23, 48] #y_range: [33, 38]
+    z_range: [900, 1000] # use idx:46 Ross Sea
+    mix_layer: "600 m"
+  - name: "Humboldt_Current"
+    x_range: [171, 196] #x_range: [181, 186]
+    y_range: [83, 108] #y_range: [93, 98]
+    z_range: [900, 1000] #In front of the coast of Chile idx=46
+    mix_layer: "600 m"
+  visualize_regions: true
+  window: 
+    input_steps: 24       # number of input time steps for the model (LSTM sequence len)
+    pred_steps: 1  
+  tracers:
+    paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_T_3D.nc"
+    variables: ["mytrc"]
+  neighbors:
+    velocity_paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_U_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_V_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_W_3D.nc"
+    u_var: "umo"
+    v_var: "vmo"
+    w_var: "wmo"
+  vertical_levels: 3
+  coords:
+    time: "time_counter"
+    depth: "z"
+    y: "y"
+    x: "x"
+  mask:
+    path: null
+    var: null
+  in_steps: 24
+  lead_time: 1 # how many steps ahead to predict
+  stride: 1 # how much to slide the window
+  norm_stats_path: "artifacts/norm_stats.json"
+  include_current_tracer: true
+  norm:
+    compute: true
+    save_path: "runs/norm_stats.json"
+  depth_stack: [-1, 0, 1] # relative to selected z_index
+model:
+  type: "cnnlstm"
+  name: "Conv2LSTM"
+  spatial_mode: "2d"
+  in_channels: null
+  hidden_channels: 64
+  enc_channels: [64, 128]
+  kernel_size: 3
+  convlstm_layers: 1
+  dropout: 0.1
+  hidden_dim: 128
+  depth_channels: 75
+training:
+  device: "cpu"
+  seed: 42
+  epochs: 20
+  batch_size: 8
+  num_workers: 0
+  lr: 1e-4
+  val_fraction: 0.1
+
+  # logging & checkpointing
+  log_dir: "./logs"
+  checkpoint_dir: "./checkpoints"
+  experiment_name: "ocean_transport_baseline"
+  output_dir: "artifacts/"
+
+  # resume training from checkpoint
+  resume_from: ""  # or path to checkpoint if resuming
+
+io:
+  log_interval: 25
+  save_every: 10
+  predict_out: "runs/preds.nc"
+
+debug:
+  save_every_n_batches: 10
+  save_first_k_batches: 200
+

@@ -1,0 +1,93 @@
+#!/bin/bash
+#SBATCH --job-name=NAUTILUS
+#SBATCH -D .
+#SBATCH --output=server_%j.out  # %j: JobId
+#SBATCH --error=server_%j.err
+#SBATCH --ntasks=4              
+#SBATCH --time=2:00:00          # Max run time 24:00:00
+#SBATCH --account=bsc32
+#SBATCH --qos=gp_debug #acc_bsces up to 24:00:00
+#SBATCH --cpus-per-task=64
+#SBATCH --mail-type=all
+#SBATCH --mail-user=nabiz.rahpoe@bsc.es
+
+
+###"""
+###from Chiara
+### Queue type. Options: ps, SGE, LSF, SLURM, PBS, eceaccess
+###TYPE = slurm
+###HOST = glogin2.bsc.es
+###PROJECT = cns113
+##USER = bsc082130
+###QUEUE = gp_resa
+###SCRATCH_DIR = /gpfs/scratch
+##ADD_PROJECT_TO_HOST = false
+##MAX_WALLCLOCK = 48:00
+###"""
+
+
+#Vxarray>=2024.1.0
+#numpy>=1.24.0
+#Vtorch>=2.1.0
+#Vpyyaml>=6.0.1
+#Vtqdm>=4.66.0
+#VnetCDF4>=1.6.5
+#Vscipy>=1.11.0
+module load PyYAML/6.0.1-GCCcore-13.2.0
+module load tqdm/4.66.2-GCCcore-13.2.0
+module load PyTorch/2.1.2-foss-2023b-Python-3.11.5
+module load imageio/2.34.1-gfbf-2023b
+# load modules or conda environments here
+#module load netcdf4-python/1.6.5-foss-2023b
+#module load TensorFlow/2.15.1-foss-2023b-Python-3.11.5
+#module load statsmodels/0.14.1-gfbf-2023b
+module load xarray/2024.5.0-gfbf-2023b-Python-3.11.5
+#module load matplotlib/3.8.2-gfbf-2023b
+module load SciPy-bundle/2023.11-gfbf-2023b
+#module load Seaborn/0.13.2-gfbf-2023b-Python-3.11.5
+#module load dask/2024.5.1-gfbf-2023b-Python-3.11.5
+#module load scikit-learn/1.4.0-gfbf-2023b
+#module unload impi
+#module load openmpi/4.1.5
+#module load scikit-image/0.24.0-foss-2023b
+
+module load hdf5
+module load python
+echo "Modules Loaded...."
+
+# Files
+#dir="/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/"
+
+#mytrc="a95g_1ts_19710101_19711231_opa_grid_T_2D.nc" 
+#mlotst: (ocean_mixed_layer_thickness_defined_by_sigma_theta)
+#omld (ocean_mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
+#umo="a95g_1ts_19710101_19711231_opa_grid_U_3D.nc"
+#umo Effective ocean transport along i-axis
+#vmo="a95g_1ts_19710101_19711231_opa_grid_V_3D.nc"
+#vmo Effective ocean transport along j-axis
+#wmo="a95g_1ts_19710101_19711231_opa_grid_W_3D.nc"
+#wmo effective ocean vertical transport
+#difvso vertical salt diffusivity * e3w
+#echo "Runtime directory: " $dir
+
+
+# Run the Ocean Emulator
+
+#echo "Start NAUTILIUS DEBUGGGG"
+#python -u -m src.debug_forward --config config/default.yaml > nautilus.log 2>&1
+#tail -n +1 nautilus.log
+#echo "End training----"
+
+echo "Start NAUTILIUS TRAIN!!!!"
+python3 -m src.train > nautilus.log 2>&1
+tail -n +1 nautilus.log
+echo "End training----"
+
+echo "Start NAUTILIUS PREDICT!!!"
+python3 -m src.predict  >> nautilus.log 
+tail -n +1 nautilus.log
+echo "End NAUTILUS ##########"
+
+echo "Err/Out in server..."
+rm server/*.*
+mv server_*.* server

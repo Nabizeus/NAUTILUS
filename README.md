@@ -1,2 +1,2 @@
-# NAUTILUS
-Nemo Advective Emulator for Transport with Integrated LSTM Unet System
+# Ocean Transport Next-Step Tracer Prediction
+See README in the chat for full details.

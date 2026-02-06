@@ -1,0 +1,111 @@
+data:
+  regions:
+  - name: "south_pacific"
+    x_range: [162, 208]
+    y_range: [40, 86]
+    z_range: [97, 180.782] #mixed layer 50 m idx:23 z:97m (below)
+    mix_layer: "50 m"
+  #- name: "pacific"
+  #  x_range: [140, 194]
+  #  y_range: [120, 170]
+  #  z_range: [0, 30] # box patch [0.5, 30.5] #mixed layer 90 m idx:10 z:17m (inside!)
+  #  mix_layer: "90 m"
+  #- name: "west_pacific"
+  #  x_range: [88, 135]
+  #  y_range: [115, 150]
+  #  z_range: [180.782, 371.223] #mixed layer 180 m idx:33 z:270m (below)
+  #  mix_layer: "180 m"
+  - name: "south_atlantic"
+    x_range: [250, 290]
+    y_range: [25, 65]
+    z_range: [61, 1380]   #box patch [61.1936, 1388.31] #mixed layer 75 m idx:42 z:697m (below)
+    mix_layer: "75 m"
+  - name: "brazil_atlantic"
+    x_range: [250, 290]
+    y_range: [80, 130]
+    z_range: [108, 900] # box patch [108.153, 857.612] #mixed layer 85 m idx:38 z:458m (below)
+    mix_layer: "85 m"
+  - name: "north_atlantic_700"
+    x_range: [240, 280]
+    y_range: [200, 240]
+    z_range: [600, 857.612] #mixed layer 600 m idx:38 z:458m (inside!)
+    mix_layer: "600 m"
+  - name: "north_atlantic_900"
+    x_range: [240, 280]
+    y_range: [200, 240]
+    z_range: [800, 1000] #mixed layer 600 m idx:38 z:458m (inside!)
+    mix_layer: "600 m"
+  visualize_regions: true
+  window: 
+    input_steps: 24            # number of input time steps for the model (LSTM sequence len)
+    pred_steps: 1  
+  tracers:
+    paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_T_3D.nc"
+    variables: ["mytrc"]
+  neighbors:
+    velocity_paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_U_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_V_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_W_3D.nc"
+    u_var: "umo"
+    v_var: "vmo"
+    w_var: "wmo"
+  coords:
+    time: "time_counter"
+    depth: "z"
+    y: "y"
+    x: "x"
+  mask:
+    path: null
+    var: null
+  in_steps: 24
+  lead_time: 1 # how many steps ahead to predict
+  stride: 6 # how much to slide the window
+  norm_stats_path: "artifacts/norm_stats.json"
+  include_current_tracer: true
+  norm:
+    compute: true
+    save_path: "runs/norm_stats.json"
+model:
+  type: "unet"
+  spatial_mode: "2d"
+  input_channels: 4
+  base_channels: 32
+  hidden_channels: 64
+  enc_channels: [32, 64]
+  kernel_size: 3
+  out_channels: 1
+  convlstm_layers: 1
+  dropout: 0.1
+  hidden_dim: 128
+  depth_channels: 75
+  convlstm_channels: 32
+  dec_channels: [64, 32]
+training:
+  device: "cpu"
+  seed: 42
+  epochs: 20
+  batch_size: 16
+  num_workers: 0
+  lr: 1e-5
+  val_fraction: 0.1
+
+  # logging & checkpointing
+  log_dir: "./logs"
+  checkpoint_dir: "./checkpoints"
+  experiment_name: "ocean_transport_baseline"
+  output_dir: "artifacts/"
+
+  # resume training from checkpoint
+  resume_from: ""  # or path to checkpoint if resuming
+
+io:
+  log_interval: 50
+  save_every: 10
+  predict_out: "runs/preds.nc"
+
+debug:
+  save_every_n_batches: 10
+  save_first_k_batches: 200
+
