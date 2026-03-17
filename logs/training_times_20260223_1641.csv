@@ -1,0 +1,4 @@
+region,elapsed_minutes,best_val_loss,epochs,batch_size,time_stamp
+Ross_Sea,6.08,0.01,20,20,2026-02-23 16:47
+North_Brazil,7.1,0.0,20,20,2026-02-23 16:54
+Humboldt_Current,6.11,0.03,20,20,2026-02-23 17:00

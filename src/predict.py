@@ -241,7 +241,8 @@ def main():
             loader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
             model_name = cfg.model.name
         
-
+            num_levels = cfg.data.vertical_levels
+            num_epochs = cfg.training.epochs
 
             
 
@@ -299,6 +300,24 @@ def main():
             for i, (inputs, targets, mask) in enumerate(loader):
 
 
+                #print("inputs shape:", inputs.shape)
+                #print("targets shape:", targets.shape)
+                #print("mask shape:", mask.shape)
+
+                #print("inputs numel:", inputs.numel())
+                #print("targets numel:", targets.numel())
+
+                #print("i",i)
+               
+
+                #x_last = inputs[:, 0]            # [1, 1, 12, 25, 25]
+                #x_repeat = x_last.repeat(1, 24, 1, 1, 1)   # [1, 24, 12, 25, 25]
+
+                #pred_24 = model(inputs)            # normal prediction
+                #pred_1  = model(x_repeat)          # "fake 1-frame" prediction
+
+                #print("x_repeat shape:", x_repeat.shape) 
+                
 
                 if inputs.ndim == 6:
                     inputs = flatten_depth(inputs)
@@ -418,7 +437,7 @@ def main():
                         pred_vis,
                         dataset.x_range,
                         dataset.y_range,
-                        f"{model_name}|N: {i}| @{depth_str} | mxl @ {mix_level}| @{region_name} "
+                        f"{model_name}|lev: {num_levels}|ep: {num_epochs}|N: {i}| @{depth_str} | mxl @ {mix_level}| @{region_name} "
                         f"|R²:{_r2:.2}  |SSIM={_ssim:.2f}",
                         img_path,
                         vmin=local_vmin,

@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import xarray as xr
 import numpy as np
-from src.utils import load_or_compute_norm_stats
+from src.utils import load_or_compute_norm_stats, compute_mass_time_series
 import os
 import matplotlib.pyplot as plt
 import yaml
@@ -209,16 +209,19 @@ class WindowedOceanDataset(Dataset):
         z_index = int(np.argmin(np.abs(depths - np.mean([zmin, zmax]))))
         self.z_index = z_index
         depth_stack = getattr(cfg.data, "depth_stack", [0])
+        input_steps = getattr(cfg.data.window, "input_steps")
+        pred_steps = getattr(cfg.data.window, "pred_steps")
         self.z_indices = get_depth_indices(self.z_index, depth_stack, len(depths))
 
 
         self.n_channels = len(self.var_names)
         self.n_depths = len(self.z_indices)   # or depth_window
-
+        print(f"📊 Input steps: {input_steps}")
+        print(f"📊 Prediction steps: {pred_steps}")
         print(f"📊 Variables used: {self.var_names}")
         print(f"📊 Channels per depth: {self.n_channels}")
         print(f"📊 Depth levels used: {self.n_depths}")
-        print(f"📊 Total input channels: {self.n_channels * self.n_depths}")
+        print(f"📊 Total variables/input channels: {self.n_channels * self.n_depths}")
         print(f"🌊 Using depth indices: {self.z_indices} -> depths {[depths[i] for i in self.z_indices]}")
         self.mix_lay = mixed_layer
 
@@ -410,7 +413,7 @@ class WindowedOceanDataset(Dataset):
 
 
         # Store raw snapshot for debug before normalization
-        idx0 = 20
+        idx0 = 200
         raw_t = self.tracer[idx0].copy()
         raw_u = self.u[idx0].copy()
         raw_v = self.v[idx0].copy()
@@ -447,7 +450,7 @@ class WindowedOceanDataset(Dataset):
             # apply min-max: (x - min)/(max-min)
             denom = (tr_max - tr_min)
             # use np.divide to avoid warnings; NaNs remain NaN
-            self.tracer = np.divide(tracer - tr_min, denom)
+            self.tracer = np.divide((tracer - tr_min), denom)
 
         
 
@@ -613,7 +616,7 @@ class WindowedOceanDataset(Dataset):
         pred_steps = self.window.pred_steps
         usable_len = total_len - (input_steps + pred_steps)
 
-        # Define 80/10/10 split along the time axis
+        # Define 90/5/5 split along the time axis
         train_end = int(0.9 * usable_len)
         val_end   = int(0.95 * usable_len)
 
@@ -625,6 +628,20 @@ class WindowedOceanDataset(Dataset):
             self.t_start, self.t_end = val_end, usable_len
 
         print(f"🧩 Using split='{self.split}' with time indices {self.t_start}:{self.t_end} of {usable_len}")
+
+        
+
+
+        if split == "train" and getattr(cfg.debug, "mass_diagnostics", True):
+            compute_mass_time_series(
+                nc_path=cfg.data.tracers.paths[0],
+                tracer_var=cfg.data.tracers.variables[0],
+                area_var="area",
+                z_idxs=self.z_indices,
+                t_start=self.t_start,
+                t_end=self.t_end,
+                region=region_name
+            )
 
 
 
@@ -860,7 +877,7 @@ class WindowedOceanDataset(Dataset):
             self.z_indices = [max(z_index-1, 0), z_index, min(z_index+1, len(depths)-1)]
             self.z_index = z_index
             self.z_level = depths[z_index]
-            print(f"@data.py - Line 284ff - self.z_level [m]: {self.z_level:.2f}")
+            print(f"🌊 self.z_level [m]: {self.z_level:.2f}")
 
     
             # Draw box using 5 points (closed loop)

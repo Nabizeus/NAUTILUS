@@ -1,0 +1,25 @@
+load HDF5/1.14.1-2 (PATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH, HDF5_DIR, HDF5_ROOT,CFLAGS, CPPFLAGS, LDFLAGS) 
+load PYTHON/3.12.1 (PATH, MANPATH, LD_LIBRARY_PATH, LIBRARY_PATH,
+PKG_CONFIG_PATH, C_INCLUDE_PATH, CPLUS_INCLUDE_PATH, PYTHONHOME, PYTHONPATH) 
+load SQLITE3/3.45.2 (PATH)
+/gpfs/home/bsc/bsc032196/NAUTILUS/src/predict.py:72: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning disappear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
+  frames = [imageio.imread(p) for p in sorted(image_paths)]
+/gpfs/home/bsc/bsc032196/NAUTILUS/src/predict.py:72: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning disappear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
+  frames = [imageio.imread(p) for p in sorted(image_paths)]
+/gpfs/home/bsc/bsc032196/NAUTILUS/src/predict.py:72: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning disappear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
+  frames = [imageio.imread(p) for p in sorted(image_paths)]
+/gpfs/home/bsc/bsc032196/NAUTILUS/src/predict.py:72: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning disappear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
+  frames = [imageio.imread(p) for p in sorted(image_paths)]
+/gpfs/home/bsc/bsc032196/NAUTILUS/src/predict.py:72: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning disappear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
+  frames = [imageio.imread(p) for p in sorted(image_paths)]
+/gpfs/home/bsc/bsc032196/NAUTILUS/src/predict.py:72: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning disappear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
+  frames = [imageio.imread(p) for p in sorted(image_paths)]
+Error executing job with overrides: []
+Traceback (most recent call last):
+  File "/gpfs/home/bsc/bsc032196/NAUTILUS/src/predict.py", line 212, in run
+    print(f"📦 Checkpoint used: {checkpoint_path}")
+                                 ^^^^^^^^^^^^^^^
+NameError: name 'checkpoint_path' is not defined
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.

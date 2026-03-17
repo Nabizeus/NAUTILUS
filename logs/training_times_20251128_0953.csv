@@ -1,0 +1,3 @@
+region,elapsed_minutes,best_val_loss,epochs,batch_size,time_stamp
+pacific,57.94,0.94,50,8,2025-11-28 10:51
+east_pacific,52.44,0.05,50,8,2025-11-28 11:43

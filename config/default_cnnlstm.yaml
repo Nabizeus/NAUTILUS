@@ -1,28 +1,23 @@
 data:
   regions:
-  - name: "North_Brazil"
-    x_range: [240, 271] #x_range: [253, 258]
-    y_range: [135, 166] #y_range: [148, 153]
-    z_range: [300, 400] # Off the coast of northern Brazil IDX 37
-    mix_layer: "200 m"
-  - name: "South_Brazil"
-    x_range: [255, 270] #x_range: [260, 265]
-    y_range: [97, 112] #y_range: [102, 107]
-    z_range: [300, 400] # Off the coast of southern Brazil IDX 37
-    mix_layer: "200 m"
   - name: "Ross_Sea"
-    x_range: [142, 167] #x_ange: [152, 157]
-    y_range: [23, 48] #y_range: [33, 38]
+    x_range: [128, 167] #x_ange: [152, 157]
+    y_range: [16, 48] #y_range: [33, 38]
     z_range: [900, 1000] # use idx:46 Ross Sea
-    mix_layer: "600 m"
-  - name: "Humboldt_Current"
-    x_range: [171, 196] #x_range: [181, 186]
-    y_range: [83, 108] #y_range: [93, 98]
-    z_range: [900, 1000] #In front of the coast of Chile idx=46
-    mix_layer: "600 m"
+    mix_layer: "¿¿¿ m"
+  - name: "North_Atlantic"
+    x_range: [239, 259] #x_range: [253, 258]
+    y_range: [177, 207] #y_range: [148, 153]
+    z_range: [600, 700] # Off the coast of northern Brazil IDX 37
+    mix_layer: "¿¿¿ m"
+  - name: "South_Pacific"
+    x_range: [126, 206] #x_range: [181, 186]
+    y_range: [64, 114] #y_range: [93, 98]
+    z_range: [300, 400] #South Pacifi 4 patches idx=46
+    mix_layer: "¿¿¿ m"  
   visualize_regions: true
   window: 
-    input_steps: 24       # number of input time steps for the model (LSTM sequence len)
+    input_steps: 24      # number of input time steps for the model (LSTM sequence len)
     pred_steps: 1  
   tracers:
     paths:
@@ -36,7 +31,7 @@ data:
     u_var: "umo"
     v_var: "vmo"
     w_var: "wmo"
-  vertical_levels: 3
+  vertical_levels: 5
   coords:
     time: "time_counter"
     depth: "z"
@@ -45,7 +40,6 @@ data:
   mask:
     path: null
     var: null
-  in_steps: 24
   lead_time: 1 # how many steps ahead to predict
   stride: 1 # how much to slide the window
   norm_stats_path: "artifacts/norm_stats.json"
@@ -53,10 +47,10 @@ data:
   norm:
     compute: true
     save_path: "runs/norm_stats.json"
-  depth_stack: [-1, 0, 1] # relative to selected z_index
+  depth_stack: [-2, -1, 0, 1, 2] # [-3, -2, -1, 0, 1, 2, 3]relative to selected z_index
 model:
   type: "cnnlstm"
-  name: "Conv2LSTM"
+  name: "C2L" #Conv2LSTM
   spatial_mode: "2d"
   in_channels: null
   hidden_channels: 64

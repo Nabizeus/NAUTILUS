@@ -1,0 +1,2 @@
+region,elapsed_minutes,best_val_loss,epochs,batch_size,time_stamp
+south_pacific,62.82,0.59,50,8,2025-11-17 17:40

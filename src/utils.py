@@ -16,6 +16,91 @@ from scipy.ndimage import gaussian_filter
 
 
 
+
+
+def compute_mass_time_series(
+    nc_path: str,
+    tracer_var: str = "mytrc",
+    area_var: str = "area",
+    z_idxs=None,
+    t_start: int = 0,
+    t_end: int = None,
+    outdir: str = "artifacts/mass_diagnostics",
+    region: str = "unknown"
+):
+    """
+    Compute and plot total tracer mass over time and mass drift.
+
+    mytrc is assumed to already include thickness (MYTRC * e3t).
+    """
+    os.makedirs(outdir, exist_ok=True)
+
+    print(f"@UTILS.PY: Z_IDXS {z_idxs}")
+
+    with xr.open_dataset(nc_path) as ds:
+        trc = ds[tracer_var]
+        area = ds[area_var].values.astype(np.float64)
+
+        if t_end is None:
+            t_end = trc.sizes["time_counter"]
+
+        masses = []
+
+        for t in range(t_start, t_end):
+            slice_t = trc.isel(time_counter=t)
+
+            if z_idxs is not None:
+                slice_t = slice_t.isel(olevel=z_idxs)
+
+            trc_np = slice_t.values.astype(np.float64)
+            
+
+            # Broadcast area to (Z, Y, X)
+            area_np = np.broadcast_to(area[None, :, :], trc_np.shape)
+
+            valid = np.isfinite(trc_np) & np.isfinite(area_np)
+
+            total_mass = np.sum(trc_np[valid] * area_np[valid])
+            
+            
+            
+            
+            masses.append(total_mass)
+        print("Mass calc shapes:", "trc_np:", trc_np.shape, "area_np:", area_np.shape)
+        masses = np.array(masses)
+        drift = (masses - masses[0]) / masses[0]
+
+        # === Plot absolute mass ===
+        plt.figure(figsize=(10, 4))
+        plt.plot(masses, lw=2)
+        plt.xlabel("Time index")
+        plt.ylabel("Total tracer mass [mol]")
+        plt.title(f"{region} – Total tracer mass over time")
+        plt.grid(alpha=0.3)
+        out_mass = os.path.join(outdir, f"{region}_mass_timeseries.png")
+        plt.tight_layout()
+        plt.savefig(out_mass, dpi=150)
+        plt.close()
+
+        # === Plot relative drift ===
+        plt.figure(figsize=(10, 4))
+        plt.plot(drift * 100, lw=2)
+        plt.axhline(0, color="k", ls="--", lw=2)
+        plt.xlabel("Time index")
+        plt.ylabel("Mass drift [%]")
+        plt.title(f"{region} – Relative tracer mass drift")
+        plt.grid(alpha=0.3)
+        out_drift = os.path.join(outdir, f"{region}_mass_drift.png")
+        plt.tight_layout()
+        plt.savefig(out_drift, dpi=150)
+        plt.close()
+
+        print(f"📈 Saved mass time series → {out_mass}")
+        print(f"📉 Saved mass drift plot  → {out_drift}")
+
+    return masses, drift
+
+
 def compute_ssim(pred, target):
     """
     Compute a simplified SSIM between two PyTorch tensors or NumPy arrays.

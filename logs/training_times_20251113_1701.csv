@@ -1,0 +1,7 @@
+region,elapsed_minutes,best_val_loss,epochs,batch_size,time_stamp
+south_pacific,4.87,2.08,30,25,2025-11-13 17:06
+pacific,3.81,1.93,30,25,2025-11-13 17:10
+east_pacific,3.7,0.83,30,25,2025-11-13 17:13
+south_atlantic,3.57,0.31,30,25,2025-11-13 17:17
+brazil_atlantic,3.35,0.54,30,25,2025-11-13 17:20
+north_atlantic,3.38,0.9,30,25,2025-11-13 17:24

@@ -12,16 +12,16 @@ def save_pred_activation_compare(pred, act, target, step, region, layer, out_dir
     vmin = np.nanmin(target)
     vmax = np.nanmax(target)
 
-    fig, axs = plt.subplots(1, 4, figsize=(14,4))
+    fig, axs = plt.subplots(1, 4,figsize=(14,4))
 
     axs[0].imshow(target, vmin=vmin, vmax=vmax)
-    axs[0].set_title("Target")
+    axs[0].set_title(f"Target {region}")
 
     axs[1].imshow(pred, vmin=vmin, vmax=vmax)
     axs[1].set_title("Prediction")
 
     axs[2].imshow(pred-target)
-    axs[2].set_title("Error")
+    axs[2].set_title("Error = Target-Predict")
 
     axs[3].imshow(act)
     axs[3].set_title(f"Activation: {layer}")

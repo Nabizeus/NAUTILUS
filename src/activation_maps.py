@@ -124,7 +124,7 @@ def visualize_activation_maps(
         fig, axes = plt.subplots(1, n_ch, figsize=(3 * n_ch, 3), squeeze=False)
 
         for i in range(n_ch):
-            axes[0, i].imshow(fmap[i], cmap="viridis")
+            axes[0, i].imshow(fmap[i], cmap="copper") #coolwarm viridis copper afmhot hot bone
             axes[0, i].axis("off")
             axes[0, i].set_title(f"{lname} ch{i}")
 

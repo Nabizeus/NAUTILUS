@@ -139,10 +139,10 @@ def debug_visualize_sample(inputs: torch.Tensor, region_name: str, number: int,
         z_center = Z // 2
         z_indices = [z_center]
 
-        if z_center - 1 >= 0:
-            z_indices.insert(0, z_center - 1)
-        if z_center + 1 < Z:
-            z_indices.append(z_center + 1)
+        if z_center - 2 >= 0:
+            z_indices.insert(0, z_center - 2)
+        if z_center + 2 < Z:
+            z_indices.append(z_center + 2)
 
         depth_mode = True
 
@@ -170,6 +170,10 @@ def debug_visualize_sample(inputs: torch.Tensor, region_name: str, number: int,
                 vars_names.append(f"{v} (Z+1)")
             elif d == 2:
                 vars_names.append(f"{v} (Z-1)")
+            elif d == 3:
+                vars_names.append(f"{v} (Z+2)")
+            elif d == 4:
+                vars_names.append(f"{v} (Z-2)")    
             else:
                 vars_names.append(f"{v} (Z{d})")
 
@@ -381,7 +385,7 @@ def main():
             mode='min',
             factor=0.5,
             patience=5,
-            verbose=True
+            verbose=False
         )
 
 
@@ -397,15 +401,24 @@ def main():
 
         print("[Training] Start train loop per epoch.....")
 
+ 
+        pbar = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epochs {cfg.training.epochs} [Train]")
+                    
+
         # per-epoch debug frames aggregator (for gif)
         for epoch in range(1, int(cfg.training.epochs) + 1):
             
             running_loss = running_rmse = running_mae = running_ssim = running_r2 = 0.0
 
+
+            #if epoch % 10 == 0:        
+
+            pbar = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch}/{cfg.training.epochs} [Train]")
+    
+
             batch_count = 0
             debug_frames = []  # store saved debug png paths for this epoch
-            pbar = tqdm(enumerate(train_loader), total=len(train_loader), desc=f"Epoch {epoch}/{cfg.training.epochs} [Train]")
-
+            
             for batch_idx, batch in pbar:
                 # batch may be (x,y) or (x,y,mask)
                 if len(batch) == 2:
@@ -464,10 +477,10 @@ def main():
                 running_r2 += r2
 
                 batch_count += 1
-                pbar.set_postfix({"train_loss": f"{running_loss / batch_count:.6f}"})
-
+                
                 # Debug visualization save
                 if (batch_idx % debug_save_every_n_batches) == 0 and (epoch % 10 == 0):
+                              
                     saved_png = debug_visualize_sample(inputs, region_name, epoch * 10000 + batch_idx)
                     debug_frames.append(saved_png)
 
@@ -540,7 +553,7 @@ def main():
 
 
 
-            print(f"✅ Epoch [{epoch}/{cfg.training.epochs}] Train Loss: {train_epoch_loss:.6f} | Val Loss: {val_epoch_loss:.6f}")
+            #print(f"✅ Epoch [{epoch}/{cfg.training.epochs}] Train Loss: {train_epoch_loss:.6f} | Val Loss: {val_epoch_loss:.6f}")
 
             # Save gif for debug_frames if any
             if debug_frames:

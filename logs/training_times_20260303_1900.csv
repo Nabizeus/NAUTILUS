@@ -1,0 +1,2 @@
+region,elapsed_minutes,best_val_loss,epochs,batch_size,time_stamp
+Ross_Sea,75.36,0.0,35,8,2026-03-03 20:15

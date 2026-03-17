@@ -1,0 +1,4 @@
+region,elapsed_minutes,best_val_loss,epochs,batch_size,time_stamp
+Ross_Sea,27.97,0.0,20,8,2026-03-06 12:37
+North_Atlantic,19.59,0.0,20,8,2026-03-06 12:57
+South_Pacific,65.6,0.0,20,8,2026-03-06 14:02

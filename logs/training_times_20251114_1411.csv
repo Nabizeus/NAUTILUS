@@ -1,0 +1,3 @@
+region,elapsed_minutes,best_val_loss,epochs,batch_size,time_stamp
+brazil_atlantic,24.14,0.13,100,50,2025-11-14 14:35
+north_atlantic,22.62,0.73,100,50,2025-11-14 14:58

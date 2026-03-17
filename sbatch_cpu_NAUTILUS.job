@@ -91,3 +91,18 @@ echo "End NAUTILUS ##########"
 echo "Err/Out in server..."
 rm server/*.*
 mv server_*.* server
+echo "Writing files prediction, logs, nemo_restart and debugs to GPFS SCRATCH......... ##########"
+
+TIMESTAMP_HH=$(date -u +"%Y_%m_%d_%H:%M:%S")
+write_out = "/gpfs/scratch/bsc32/bsc032196/nautilus/results_"${TIMESTAMP_HH}
+mkdir -p "${write_out}"
+
+cp -r config $write_out
+cp -r predictions $write_out
+cp -r logs $write_out
+cp -r nemo_restart $write_out
+cp -r activations $write_out
+cp -r artifacts $write_out
+
+echo "Copied current results to GPFS SCRATCH!  ##########" "${write_out}"
+
