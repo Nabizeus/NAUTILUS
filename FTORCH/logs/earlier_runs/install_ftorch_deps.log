@@ -1,0 +1,152 @@
+unload bsc/1.0 (PATH, MANPATH)
+unload UCX/1.15.0 (PATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH) 
+remove mkl/2023.2.0 (LD_LIBRARY_PATH)
+remove impi/2021.10.0 (PATH, MANPATH, LD_LIBRARY_PATH)
+load HDF5/1.14.1-2 (PATH, LD_LIBRARY_PATH, LIBRARY_PATH, C_INCLUDE_PATH,
+CPLUS_INCLUDE_PATH, HDF5_DIR, HDF5_ROOT,CFLAGS, CPPFLAGS, LDFLAGS) 
+Lmod has detected the following error: Cannot load module "hdf5/1.14.1-2"
+without these module(s) loaded:
+   atleast("intel","2023.0") atleast("impi","2021.8")
+
+While processing the following module(s):
+    Module fullname  Module Filename
+    ---------------  ---------------
+    hdf5/1.14.1-2    /apps/GPP/modulefiles/libs/hdf5/1.14.1-2.lua
+
+gfortran: /gpfs/projects/bsc32/software/rhel/9.2/software/GCCcore/13.2.0/bin/gfortran  (GNU Fortran (GCC) 13.2.0)
+cmake   : /gpfs/projects/bsc32/software/rhel/9.2/software/CMake/3.27.6-GCCcore-13.2.0/bin/cmake  (cmake version 3.27.6)
+libtorch: /gpfs/projects/bsc32/software/rhel/9.2/software/PyTorch/2.1.2-foss-2023b-Python-3.11.5/lib/python3.11/site-packages/torch
+Cloning into '/home/bsc/bsc032196/nautilus_deps/src/json-fortran'...
+Note: switching to '1147599ac31dbd4a23bbaccd8492221c8b3cd488'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+-- The Fortran compiler identification is GNU 13.2.0
+-- Detecting Fortran compiler ABI info
+-- Detecting Fortran compiler ABI info - done
+-- Check for working Fortran compiler: /gpfs/projects/bsc32/software/rhel/9.2/software/GCCcore/13.2.0/bin/gfortran - skipped
+-- CMake build configuration for JSON-Fortran 9.0.2
+-- Configuring done (1.6s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/bsc/bsc032196/nautilus_deps/src/json-fortran/build
+[  7%] Building Fortran object CMakeFiles/jsonfortran.dir/src/json_kinds.F90.o
+[ 14%] Building Fortran object CMakeFiles/jsonfortran.dir/src/json_parameters.F90.o
+[ 21%] Building Fortran object CMakeFiles/jsonfortran.dir/src/json_string_utilities.F90.o
+[ 28%] Building Fortran object CMakeFiles/jsonfortran.dir/src/json_value_module.F90.o
+[ 35%] Building Fortran object CMakeFiles/jsonfortran.dir/src/json_file_module.F90.o
+[ 42%] Building Fortran object CMakeFiles/jsonfortran.dir/src/json_module.F90.o
+[ 50%] Linking Fortran shared library lib/libjsonfortran.so
+/gpfs/projects/bsc32/software/rhel/9.2/software/binutils/2.40-GCCcore-13.2.0/bin/ld: warning: CMakeFiles/jsonfortran.dir/src/json_value_module.F90.o: requires executable stack (because the .note.GNU-stack section is executable)
+[ 50%] Built target jsonfortran
+[ 57%] Building Fortran object CMakeFiles/jsonfortran-static.dir/src/json_kinds.F90.o
+[ 64%] Building Fortran object CMakeFiles/jsonfortran-static.dir/src/json_parameters.F90.o
+[ 71%] Building Fortran object CMakeFiles/jsonfortran-static.dir/src/json_string_utilities.F90.o
+[ 78%] Building Fortran object CMakeFiles/jsonfortran-static.dir/src/json_value_module.F90.o
+[ 85%] Building Fortran object CMakeFiles/jsonfortran-static.dir/src/json_file_module.F90.o
+[ 92%] Building Fortran object CMakeFiles/jsonfortran-static.dir/src/json_module.F90.o
+[100%] Linking Fortran static library lib/libjsonfortran.a
+[100%] Built target jsonfortran-static
+-- Install configuration: "Release"
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/libjsonfortran.so.9.0.2
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/libjsonfortran.so.9.0
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/libjsonfortran.so
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/libjsonfortran.a
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/include/json_file_module.mod
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/include/json_kinds.mod
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/include/json_module.mod
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/include/json_parameters.mod
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/include/json_string_utilities.mod
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/include/json_value_module.mod
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/cmake/jsonfortran-gnu-9.0.2/jsonfortran-gnu-targets.cmake
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/cmake/jsonfortran-gnu-9.0.2/jsonfortran-gnu-targets-release.cmake
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/cmake/jsonfortran-gnu-9.0.2/jsonfortran-gnu-config.cmake
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/cmake/jsonfortran-gnu-9.0.2/jsonfortran-gnu-config-version.cmake
+-- Installing: /home/bsc/bsc032196/nautilus_deps/json-fortran/lib64/pkgconfig/json-fortran.pc
+Cloning into '/home/bsc/bsc032196/nautilus_deps/src/FTorch'...
+Note: switching to '67973f554bfd55d11a1bd7da16589ed44de8151d'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+-- The C compiler identification is GNU 13.2.0
+-- The CXX compiler identification is GNU 13.2.0
+-- The Fortran compiler identification is GNU 13.2.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /gpfs/projects/bsc32/software/rhel/9.2/software/GCCcore/13.2.0/bin/gcc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /gpfs/projects/bsc32/software/rhel/9.2/software/GCCcore/13.2.0/bin/g++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Detecting Fortran compiler ABI info
+-- Detecting Fortran compiler ABI info - done
+-- Check for working Fortran compiler: /gpfs/projects/bsc32/software/rhel/9.2/software/GCCcore/13.2.0/bin/gfortran - skipped
+-- Detecting Fortran/C Interface
+-- Detecting Fortran/C Interface - Found GLOBAL and MODULE mangling
+-- Verifying Fortran/CXX Compiler Compatibility
+-- Verifying Fortran/CXX Compiler Compatibility - Success
+-- Found ZLIB: /gpfs/projects/bsc32/software/rhel/9.2/software/zlib/1.2.13-GCCcore-13.2.0/lib/libz.so (found version "1.2.13")  
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD
+-- Performing Test CMAKE_HAVE_LIBC_PTHREAD - Success
+-- Found Threads: TRUE  
+-- Caffe2: Found protobuf with new-style protobuf targets.
+-- Caffe2: Protobuf version 25.3.0
+CMake Warning at /gpfs/projects/bsc32/software/rhel/9.2/software/PyTorch/2.1.2-foss-2023b-Python-3.11.5/lib/python3.11/site-packages/torch/share/cmake/Torch/TorchConfig.cmake:22 (message):
+  static library kineto_LIBRARY-NOTFOUND not found.
+Call Stack (most recent call first):
+  /gpfs/projects/bsc32/software/rhel/9.2/software/PyTorch/2.1.2-foss-2023b-Python-3.11.5/lib/python3.11/site-packages/torch/share/cmake/Torch/TorchConfig.cmake:127 (append_torchlib_if_found)
+  CMakeLists.txt:79 (find_package)
+
+
+-- Found Torch: /gpfs/projects/bsc32/software/rhel/9.2/software/PyTorch/2.1.2-foss-2023b-Python-3.11.5/lib/python3.11/site-packages/torch/lib/libtorch.so  
+-- Configuring done (12.6s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/bsc/bsc032196/nautilus_deps/src/FTorch/build
+[ 25%] Building Fortran object CMakeFiles/ftorch.dir/src/ftorch.F90.o
+[ 50%] Building CXX object CMakeFiles/ftorch.dir/src/ctorch.cpp.o
+[ 75%] Building Fortran object CMakeFiles/ftorch.dir/src/ftorch_test_utils.f90.o
+[100%] Linking CXX shared library libftorch.so
+[100%] Built target ftorch
+-- Install configuration: "Release"
+-- Installing: /home/bsc/bsc032196/nautilus_deps/ftorch/lib64/libftorch.so
+-- Set runtime path of "/home/bsc/bsc032196/nautilus_deps/ftorch/lib64/libftorch.so" to "$ORIGIN/../lib64:/gpfs/projects/bsc32/software/rhel/9.2/software/PyTorch/2.1.2-foss-2023b-Python-3.11.5/lib/python3.11/site-packages/torch/lib"
+-- Installing: /home/bsc/bsc032196/nautilus_deps/ftorch/include/ctorch.h
+-- Installing: /home/bsc/bsc032196/nautilus_deps/ftorch/lib64/cmake/FTorch/FTorchConfig.cmake
+-- Installing: /home/bsc/bsc032196/nautilus_deps/ftorch/lib64/cmake/FTorch/FTorchConfig-release.cmake
+-- Installing: /home/bsc/bsc032196/nautilus_deps/ftorch/include/ftorch/ftorch.mod
+-- Installing: /home/bsc/bsc032196/nautilus_deps/ftorch/include/ftorch/ftorch_test_utils.mod
+
+Installed:
+  json-fortran 9.0.2 -> /home/bsc/bsc032196/nautilus_deps/json-fortran
+  FTorch       v1.0.0        -> /home/bsc/bsc032196/nautilus_deps/ftorch
+Environment file: /home/bsc/bsc032196/nautilus_deps/env_ftorch.sh
+Next: sbatch sbatch_ftorch_pipeline.job

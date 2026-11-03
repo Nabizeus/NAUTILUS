@@ -1,0 +1,53 @@
+{
+  "config": "config/nautilus_v7_k5_gnn256.yaml",
+  "arch": "gnn",
+  "hidden_dim": 256,
+  "n_layers": 6,
+  "n_blocks": 3,
+  "ranks": 112,
+  "rank": 1,
+  "decomposition": [
+    8,
+    14
+  ],
+  "halo": 6,
+  "inner": [
+    36,
+    26
+  ],
+  "shape": [
+    42,
+    38
+  ],
+  "ocean_columns": 25,
+  "cells": 1596,
+  "threads": 1,
+  "parameters": 2991691,
+  "runs": [
+    {
+      "setting": "fp32-eager",
+      "seconds_per_call": 0.003928735153749585,
+      "best_seconds_per_call": 0.0038985679857432842,
+      "prepare_seconds": 0.02853851392865181
+    },
+    {
+      "setting": "fp32-jit",
+      "seconds_per_call": 0.00328663713298738,
+      "best_seconds_per_call": 0.0030638589523732662,
+      "prepare_seconds": 0.16330314800143242
+    },
+    {
+      "setting": "bf16-eager",
+      "seconds_per_call": 0.0026959849055856466,
+      "best_seconds_per_call": 0.0026485519483685493,
+      "prepare_seconds": 0.023925461107864976
+    },
+    {
+      "setting": "bf16-jit",
+      "seconds_per_call": 0.0021269721910357475,
+      "best_seconds_per_call": 0.002022665925323963,
+      "prepare_seconds": 0.12268253415822983
+    }
+  ],
+  "gflop_per_call": 0.1485184
+}

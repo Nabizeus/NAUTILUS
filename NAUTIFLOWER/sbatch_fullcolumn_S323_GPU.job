@@ -1,0 +1,128 @@
+#!/bin/bash
+#SBATCH --job-name=ACC_NAUTILUS_fullcolumn
+#SBATCH -D .
+#SBATCH --output=server_acc_%j.out  # %j: JobId
+#SBATCH --error=server_acc_%j.err
+#SBATCH --ntasks=1
+#SBATCH --time=48:00:00          # Max run time 24:00:00
+#SBATCH --account=bsc32
+#SBATCH --qos=acc_bsces #gp_debug #acc_bsces up to 24:00:00
+#SBATCH --cpus-per-task=20
+#SBATCH --gres=gpu:1
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=nabiz.rahpoe@bsc.es
+
+# ---------------------------------------------------------------------
+# GPU/ACC version of sbatch_fullcolumn_S323.job — same full-column code,
+# same `python -m src.train` / `python -m src.predict` invocation, same
+# --config support, just the GPU-specific module list + PYTHONPATH
+# carried over from the old (pre-full-column) GPU job, which is known
+# to have worked on this cluster's ACC/INTEL-Python environment.
+#
+# Use conv2dlstm_s323D_fullcolumn_GPU.yaml (or point --config at any
+# depth-sweep config) — the only difference from the CPU yaml is a
+# handful of device/hardware fields; everything else is identical.
+# ---------------------------------------------------------------------
+
+module purge
+module load PyYAML/6.0.1-GCCcore-13.2.0
+module load tqdm/4.66.2-GCCcore-13.2.0
+module load PyTorch/2.3.0-foss-2023b-CUDA-12.4.0
+module load imageio/2.34.1-gfbf-2023b
+module load scikit-learn/1.4.0-gfbf-2023b   # dashboard_predict.py imports sklearn
+
+# Hydra/OmegaConf aren't on the ACC/INTEL Python's default path —
+# predict.py needs them. This mirrors the old GPU job's exact check;
+# if it fails here, you need $HOME/python_extra set up on THIS
+# cluster/account the same way it was for the old GPU runs.
+HYDRA_PATH="$HOME/python_extra"
+if [ ! -d "$HYDRA_PATH" ]; then
+    echo "===================================="
+    echo "ERROR: Missing Hydra/OmegaConf path:"
+    echo "ERROR: Cannot find $HYDRA_PATH"
+    echo "===================================="
+    exit 1
+fi
+export PYTHONPATH="$HYDRA_PATH:$PYTHONPATH"
+
+module load xarray/2024.5.0-gfbf-2023b-Python-3.11.5
+module load SciPy-bundle/2023.11-gfbf-2023b
+module load netcdf4-python/1.7.1.post2-foss-2023b
+module load h5netcdf/1.6.1-foss-2023b-Python-3.11.5
+
+echo "Modules Loaded...."
+
+echo "========== GPU CHECK =========="
+hostname
+date
+echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
+echo "SLURM_GPUS=$SLURM_GPUS"
+nvidia-smi
+
+echo "========== ENVIRONMENT =========="
+python << EOF
+import sys, torch, hydra, omegaconf, xarray, sklearn
+print("Python     :", sys.executable)
+print("Hydra      :", hydra.__version__)
+print("OmegaConf  :", omegaconf.__version__)
+print("xarray     :", xarray.__version__)
+print("Sklearn    :", sklearn.__version__)
+print("xarray engines:", list(xarray.backends.list_engines().keys()))
+print("Torch:", torch.__version__)
+print("CUDA available:", torch.cuda.is_available())
+print("CUDA:", torch.version.cuda)
+print("GPU count:", torch.cuda.device_count())
+if torch.cuda.is_available():
+    print("GPU:", torch.cuda.get_device_name(0))
+    print("Memory:", torch.cuda.get_device_properties(0).total_memory/1024**3, "GB")
+EOF
+echo "==============================="
+
+# ---------------------------------------------------------------------
+# Run
+# ---------------------------------------------------------------------
+CONFIG="config/conv2dlstm_s323D_fullcolumn_GPU.yaml"
+
+TIMESTAMP_HH=$(date -u +"%Y_%m_%d_%H:%M:%S")
+echo "${TIMESTAMP_HH}"
+arch="conv2dlstm_s323D_GPU_fullcolumn"
+write_out="/gpfs/scratch/bsc32/bsc032196/nautilus/${arch}/output_${TIMESTAMP_HH}"
+
+mkdir -p "${write_out}"
+echo "write out to... ${write_out}"
+echo "${write_out}" >> "list_s323D_exp_gpfs_scratch.dat"
+
+echo "Start NAUTILUS TRAIN!!!!"
+python -m src.train --config "${CONFIG}" > train_acc_nautilus.log 2>&1
+tail -n +1 train_acc_nautilus.log
+echo "End training----"
+
+echo "Start NAUTILUS PREDICT!!!"
+python -m src.predict --config "${CONFIG}" > inference_acc_nautilus.log 2>&1
+tail -n +1 inference_acc_nautilus.log
+echo "End NAUTILUS ##########"
+
+echo "Err/Out in server..."
+rm -f server/*.*
+mv server_*.* server 2>/dev/null
+
+# Fuller copy list than either the old GPU job or the current CPU job —
+# both were missing norms/, activations_dashboard/, weights_dashboard/,
+# and plots/ (the depth-skill CSVs + heatmaps), all of which the newer
+# dashboards/modules write to.
+cp -r config "${write_out}"
+#cp -r predictions "${write_out}"
+#cp -r norms "${write_out}" 2>/dev/null
+cp -r logs "${write_out}"
+#cp -r nemo_restart "${write_out}"
+cp -r activations "${write_out}"
+cp -r activations_dashboard "${write_out}" 2>/dev/null
+cp -r weights_dashboard "${write_out}" 2>/dev/null
+#cp -r artifacts "${write_out}"
+cp -r plots "${write_out}" 2>/dev/null
+cp -r server "${write_out}"
+#cp -r checkpoints "${write_out}"
+cp -r profiler "${write_out}"
+cp sbatch*.job "${write_out}"
+
+echo "Copied current results to GPFS SCRATCH!  ##########" "${write_out}"

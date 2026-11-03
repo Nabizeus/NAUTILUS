@@ -1,0 +1,55 @@
+ NAUTILUS model loaded from ftorch_export/nautilus_North_Pacific.pt
+ T=           4  C=           6  Z=          75  H=          20  W=          27
+   run 1:   63905.45 ms
+   run 2:   63911.56 ms
+   run 3:   63922.85 ms
+   run 4:   63967.99 ms
+   run 5:   63939.41 ms
+BENCH who=Fortran+FTorch threads=1 reps=5 mean_ms=  63929.45 min_ms=  63905.45 max_ms=  63967.99
+   run 1:   63963.49 ms
+   run 2:   63966.26 ms
+   run 3:   63894.38 ms
+   run 4:   63900.44 ms
+   run 5:   63936.22 ms
+BENCH who=Python-torch-2.1.2 threads=1 reps=5 mean_ms=63932.16 min_ms=63894.38 max_ms=63966.26
+   run 1:   63906.70 ms
+   run 2:   63879.34 ms
+   run 3:   63888.85 ms
+   run 4:   63927.03 ms
+   run 5:   63907.66 ms
+BENCH who=Python-torch-2.3.0 threads=1 reps=5 mean_ms=63901.92 min_ms=63879.34 max_ms=63927.03
+ NAUTILUS model loaded from ftorch_export/nautilus_North_Pacific.pt
+ T=           4  C=           6  Z=          75  H=          20  W=          27
+   run 1:    4290.57 ms
+   run 2:    4290.15 ms
+   run 3:    4293.39 ms
+   run 4:    4293.91 ms
+   run 5:    4295.86 ms
+   run 6:    4291.36 ms
+   run 7:    4292.78 ms
+   run 8:    4290.74 ms
+   run 9:    4288.76 ms
+   run 10:    4281.41 ms
+BENCH who=Fortran+FTorch threads=16 reps=10 mean_ms=   4290.89 min_ms=   4281.41 max_ms=   4295.86
+   run 1:    4292.55 ms
+   run 2:    4293.34 ms
+   run 3:    4298.68 ms
+   run 4:    4295.61 ms
+   run 5:    4293.36 ms
+   run 6:    4294.53 ms
+   run 7:    4304.43 ms
+   run 8:    4296.95 ms
+   run 9:    4296.21 ms
+   run 10:    4297.13 ms
+BENCH who=Python-torch-2.1.2 threads=16 reps=10 mean_ms=4296.28 min_ms=4292.55 max_ms=4304.43
+   run 1:    4287.14 ms
+   run 2:    4287.33 ms
+   run 3:    4287.67 ms
+   run 4:    4286.31 ms
+   run 5:    4285.92 ms
+   run 6:    4290.98 ms
+   run 7:    4285.73 ms
+   run 8:    4283.94 ms
+   run 9:    4287.54 ms
+   run 10:    4284.69 ms
+BENCH who=Python-torch-2.3.0 threads=16 reps=10 mean_ms=4286.73 min_ms=4283.94 max_ms=4290.98

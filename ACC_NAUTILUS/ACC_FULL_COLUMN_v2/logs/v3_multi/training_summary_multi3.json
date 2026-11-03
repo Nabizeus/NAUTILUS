@@ -1,0 +1,14 @@
+{
+  "epochs_run": 60,
+  "best_epoch": 55,
+  "best_val_loss": 0.362309145706311,
+  "stop_reason": "maximum number of epochs reached",
+  "final_lr": 5e-05,
+  "regions": [
+    "North_Atlantic_big",
+    "Tropical_Pacific_W",
+    "Southern_Ocean_AI"
+  ],
+  "skipped_steps": 33,
+  "minutes": 374.09109362761177
+}

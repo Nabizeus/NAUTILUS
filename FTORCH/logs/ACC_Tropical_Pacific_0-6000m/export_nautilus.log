@@ -1,0 +1,11 @@
+[export] T=4 C=6 Z=75 H=36 W=14
+[export] channels (in order): ['mytrc', 'umo', 'vmo', 'wmo', 'difvso', 'mlotst']
+🚀 USING VECTORIZED ASYMMETRIC Conv2DLSTM (XPU)
+/gpfs/home/bsc/bsc032196/NAUTILUS/FTORCH/runs/ACC_Tropical_Pacific_0-6000m/src/model_conv2d_asym_hybrid.py:47: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+  above = min(self.max_above, Z - z - 1)
+/gpfs/home/bsc/bsc032196/NAUTILUS/FTORCH/runs/ACC_Tropical_Pacific_0-6000m/src/model_conv2d_asym_hybrid.py:55: TracerWarning: Using len to get tensor shape might cause the trace to be incorrect. Recommended usage would be tensor.shape[0]. Passing a tensor of different shape might lead to errors or silently give incorrect results.
+  if len(idx) < self.max_window:
+/gpfs/home/bsc/bsc032196/NAUTILUS/FTORCH/runs/ACC_Tropical_Pacific_0-6000m/src/model_conv2d_asym_hybrid.py:56: TracerWarning: Using len to get tensor shape might cause the trace to be incorrect. Recommended usage would be tensor.shape[0]. Passing a tensor of different shape might lead to errors or silently give incorrect results.
+  pad = idx[-1].repeat(self.max_window - len(idx))
+[export] Saved TorchScript model -> ftorch_export/nautilus_Tropical_Pacific.pt
+[export] Saved metadata -> ftorch_export/nautilus_Tropical_Pacific_metadata.json

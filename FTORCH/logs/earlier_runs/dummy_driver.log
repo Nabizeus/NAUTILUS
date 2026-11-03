@@ -1,0 +1,10 @@
+ Loading model from metadata: ftorch_export/nautilus_North_Atlantic_metadata.json
+ NAUTILUS model loaded from ftorch_export/nautilus_North_Atlantic.pt
+ T=           4  C=           6  Z=          75  H=          25  W=          20
+ Pushing            4  synthetic time steps...
+   step            1 /           4  pushed. history_ready= F
+   step            2 /           4  pushed. history_ready= F
+   step            3 /           4  pushed. history_ready= F
+   step            4 /           4  pushed. history_ready= T
+ PASS: forward() ran and returned a finite prediction.
+ pred_tracer stats: min=  -1.96345486E-02  max=   8.11987594E-02  mean=   9.92323365E-03

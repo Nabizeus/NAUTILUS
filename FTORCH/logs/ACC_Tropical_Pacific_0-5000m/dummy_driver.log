@@ -1,0 +1,10 @@
+ Loading model from metadata: ftorch_export/nautilus_Tropical_Pacific_metadata.json
+ NAUTILUS model loaded from ftorch_export/nautilus_Tropical_Pacific.pt
+ T=           4  C=           6  Z=          75  H=          36  W=          14
+ Pushing            4  synthetic time steps...
+   step            1 /           4  pushed. history_ready= F
+   step            2 /           4  pushed. history_ready= F
+   step            3 /           4  pushed. history_ready= F
+   step            4 /           4  pushed. history_ready= T
+ PASS: forward() ran and returned a finite prediction.
+ pred_tracer stats: min=   0.00000000      max=   4.80846167      mean=  0.292009056    

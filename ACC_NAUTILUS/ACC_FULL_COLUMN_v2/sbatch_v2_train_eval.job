@@ -1,0 +1,155 @@
+#!/bin/bash
+#SBATCH --job-name=NAUTILUS_v2
+#SBATCH -D .
+#SBATCH --output=server/v2_%j.out
+#SBATCH --error=server/v2_%j.err
+#SBATCH --ntasks=1
+#SBATCH --time=08:00:00          # v3: up to 60 epochs (~8 min each with 3 regions) + evaluation + prediction
+#SBATCH --account=bsc32
+#SBATCH --qos=acc_bsces #gp_debug #acc_bsces up to 24:00:00
+#SBATCH --cpus-per-task=20
+#SBATCH --gres=gpu:1
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=nabiz.rahpoe@bsc.es
+
+# ---------------------------------------------------------------------
+# GPU/ACC version of sbatch_fullcolumn_S323.job — same full-column code,
+# same `python -m src.train` / `python -m src.predict` invocation, same
+# --config support, just the GPU-specific module list + PYTHONPATH
+# carried over from the old (pre-full-column) GPU job, which is known
+# to have worked on this cluster's ACC/INTEL-Python environment.
+#
+# Use conv2dlstm_s323D_fullcolumn_GPU.yaml (or point --config at any
+# depth-sweep config) — the only difference from the CPU yaml is a
+# handful of device/hardware fields; everything else is identical.
+# ---------------------------------------------------------------------
+
+module purge
+module load PyYAML/6.0.1-GCCcore-13.2.0
+module load tqdm/4.66.2-GCCcore-13.2.0
+module load PyTorch/2.3.0-foss-2023b-CUDA-12.4.0
+module load imageio/2.34.1-gfbf-2023b
+module load scikit-learn/1.4.0-gfbf-2023b   # dashboard_predict.py imports sklearn
+module load Seaborn/0.13.2-gfbf-2023b-Python-3.11.5   # v3: dashboard theme (optional, falls back to matplotlib)
+
+# Hydra/OmegaConf aren't on the ACC/INTEL Python's default path —
+# predict.py needs them. This mirrors the old GPU job's exact check;
+# if it fails here, you need $HOME/python_extra set up on THIS
+# cluster/account the same way it was for the old GPU runs.
+HYDRA_PATH="$HOME/python_extra"
+if [ ! -d "$HYDRA_PATH" ]; then
+    echo "===================================="
+    echo "ERROR: Missing Hydra/OmegaConf path:"
+    echo "ERROR: Cannot find $HYDRA_PATH"
+    echo "===================================="
+    exit 1
+fi
+export PYTHONPATH="$HYDRA_PATH:$PYTHONPATH"
+
+module load xarray/2024.5.0-gfbf-2023b-Python-3.11.5
+module load SciPy-bundle/2023.11-gfbf-2023b
+module load netcdf4-python/1.7.1.post2-foss-2023b
+module load h5netcdf/1.6.1-foss-2023b-Python-3.11.5
+
+echo "Modules Loaded...."
+
+echo "========== GPU CHECK =========="
+hostname
+date
+echo "CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES"
+echo "SLURM_GPUS=$SLURM_GPUS"
+nvidia-smi
+
+echo "========== ENVIRONMENT =========="
+python << EOF
+import sys, torch, hydra, omegaconf, xarray, sklearn
+print("Python     :", sys.executable)
+print("Hydra      :", hydra.__version__)
+print("OmegaConf  :", omegaconf.__version__)
+print("xarray     :", xarray.__version__)
+print("Sklearn    :", sklearn.__version__)
+print("xarray engines:", list(xarray.backends.list_engines().keys()))
+print("Torch:", torch.__version__)
+print("CUDA available:", torch.cuda.is_available())
+print("CUDA:", torch.version.cuda)
+print("GPU count:", torch.cuda.device_count())
+if torch.cuda.is_available():
+    print("GPU:", torch.cuda.get_device_name(0))
+    print("Memory:", torch.cuda.get_device_properties(0).total_memory/1024**3, "GB")
+EOF
+echo "==============================="
+
+# ---------------------------------------------------------------------
+# Run (v2): train on the large North Atlantic box, evaluate on random boxes
+# over the globe (test period), then src.predict with dashboards on the named
+# boxes. Submit from ACC_FULL_COLUMN_v2:
+#     sbatch sbatch_v2_train_eval.job
+#     CONFIG=config/nautilus_v2b_inc_mask6.yaml sbatch sbatch_v2_train_eval.job
+#     CONFIG=config/nautilus_v2_smoketest.yaml sbatch --qos=acc_debug --time=02:00:00 sbatch_v2_train_eval.job
+# SKIP_TRAIN=1, SKIP_EVAL=1, SKIP_PREDICT=1, SKIP_ROLLOUT=1 leave out a step.
+# ---------------------------------------------------------------------
+set -o pipefail
+CONFIG="${CONFIG:-config/nautilus_v2_NA_mask3d.yaml}"
+export PYTHONUNBUFFERED=1
+echo "CONFIG=${CONFIG}"
+echo "git commit: $(git rev-parse --short HEAD 2>/dev/null)"
+mkdir -p logs
+
+# ---------------------------------------------------------------------
+# v3: copy the results of this job to GPFS when the job ends
+# (also after a failed step): config, logs, scores, dashboards,
+# prediction plots, checkpoint, norms, job output. NO_RESULTS_COPY=1 (or the old
+# NO_SCRATCH_COPY=1) skips it.
+# 2026-10-28: to /gpfs/projects instead of /gpfs/scratch (the bsc32 scratch quota is
+# nearly full). RESULTS_BASE overrides the base; the subfolder is the repository
+# directory (ACC_FULL_COLUMN_v2 or NAUTIFLOWER), as on scratch before.
+# ---------------------------------------------------------------------
+EXP=$(sed -n 's/^ *experiment_name: *"\{0,1\}\([^" #]*\).*/\1/p' "${CONFIG}" | head -1)
+EVAL_DIR=$(sed -n 's/^ *out_dir: *"\{0,1\}\([^" #]*\).*/\1/p' "${CONFIG}" | head -1)
+RESULTS_BASE="${RESULTS_BASE:-/gpfs/projects/bsc32/bsc032196/nautilus}"
+RESULTS_OUT="${RESULTS_BASE}/$(basename "${PWD}")/${EXP:-run}/output_$(date +%Y_%m_%d_%H%M%S)_${SLURM_JOB_ID}"
+copy_results() {
+    [ "${NO_RESULTS_COPY:-${NO_SCRATCH_COPY:-0}}" = "1" ] && return
+    mkdir -p "${RESULTS_OUT}" || return
+    cp "${CONFIG}" sbatch_v2_train_eval.job "${RESULTS_OUT}/" 2>/dev/null
+    git rev-parse HEAD > "${RESULTS_OUT}/git_commit.txt" 2>/dev/null
+    for d in "logs/${EXP}" "artifacts/${EXP}" "artifacts/dashboard/prediction/${EXP}" "${EVAL_DIR}"; do
+        [ -n "${d}" ] && [ -e "${d}" ] && mkdir -p "${RESULTS_OUT}/$(dirname "${d}")" && cp -r "${d}" "${RESULTS_OUT}/$(dirname "${d}")/"
+    done
+    mkdir -p "${RESULTS_OUT}/logs" "${RESULTS_OUT}/predictions" "${RESULTS_OUT}/checkpoints" \
+             "${RESULTS_OUT}/norms" "${RESULTS_OUT}/server" "${RESULTS_OUT}/profiler"
+    cp logs/*_v2_${SLURM_JOB_ID}.log "${RESULTS_OUT}/logs/" 2>/dev/null
+    mkdir -p "${RESULTS_OUT}/artifacts/dashboard/training"
+    cp artifacts/dashboard/training/*${EXP}* "${RESULTS_OUT}/artifacts/dashboard/training/" 2>/dev/null
+    cp -r predictions/${EXP}_* "${RESULTS_OUT}/predictions/" 2>/dev/null
+    cp checkpoints/${EXP}_* "${RESULTS_OUT}/checkpoints/" 2>/dev/null
+    cp norms/${EXP}_* "${RESULTS_OUT}/norms/" 2>/dev/null
+    cp server/v2_${SLURM_JOB_ID}.* "${RESULTS_OUT}/server/" 2>/dev/null
+    cp profiler/*${EXP}* "${RESULTS_OUT}/profiler/" 2>/dev/null
+    echo "${RESULTS_OUT}" >> list_v2_exp_gpfs_projects.dat
+    echo "######## $(date +%H:%M:%S) copied results to GPFS projects: ${RESULTS_OUT} ($(du -sh "${RESULTS_OUT}" | cut -f1))"
+}
+trap copy_results EXIT
+
+if [ "${SKIP_TRAIN:-0}" != "1" ]; then
+    echo "######## $(date +%H:%M:%S) TRAIN"
+    python -m src.train --config "${CONFIG}" 2>&1 | tee "logs/train_v2_${SLURM_JOB_ID}.log" | grep -v -E "it/s\]|s/it\]" || exit 1
+fi
+
+if [ "${SKIP_EVAL:-0}" != "1" ]; then
+    echo "######## $(date +%H:%M:%S) EVALUATE (global, test period)"
+    python -m src.evaluate_global --config "${CONFIG}" 2>&1 | tee "logs/eval_v2_${SLURM_JOB_ID}.log" || exit 1
+fi
+
+if [ "${SKIP_PREDICT:-0}" != "1" ]; then
+    echo "######## $(date +%H:%M:%S) PREDICT (named boxes, dashboards)"
+    mkdir -p plots/heatmaps
+    python -m src.predict --config "${CONFIG}" 2>&1 | tee "logs/predict_v2_${SLURM_JOB_ID}.log" | grep -v -E "it/s\]|s/it\]" || exit 1
+fi
+
+if [ "${SKIP_ROLLOUT:-0}" != "1" ]; then
+    echo "######## $(date +%H:%M:%S) ROLLOUT (auto-regressive, test period)"
+    python -m src.rollout_eval --config "${CONFIG}" 2>&1 | tee "logs/rollout_v2_${SLURM_JOB_ID}.log" || exit 1
+fi
+
+echo "######## $(date +%H:%M:%S) DONE"

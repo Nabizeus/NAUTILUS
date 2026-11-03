@@ -1,0 +1,7 @@
+[crosscheck] T=4 C=6 Z=75 H=25 W=20
+[crosscheck] loaded ftorch_export/nautilus_North_Atlantic.pt
+[crosscheck] wrote crosscheck/dummy_input.bin  (3600000 bytes)
+[crosscheck] wrote crosscheck/dummy_output_reference.bin (150000 bytes)
+[crosscheck] wrote crosscheck/dummy_shapes.json
+[crosscheck] input  stats: min=0.000000 max=0.999999 mean=0.500219
+[crosscheck] output stats: min=-0.173180 max=0.752343 mean=0.279165

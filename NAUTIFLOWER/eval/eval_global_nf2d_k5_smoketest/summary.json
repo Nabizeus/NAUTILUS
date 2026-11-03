@@ -1,0 +1,35 @@
+{
+  "checkpoint": "./checkpoints/nf2d_k5_smoketest_multi4_best_model.pt",
+  "training_region": "multi4",
+  "test_windows": 381,
+  "n_random": 37,
+  "n_seen": 13,
+  "training_regions": [
+    "North_Atlantic_big",
+    "Tropical_Pacific_W",
+    "Southern_Ocean_AI",
+    "South_Atlantic"
+  ],
+  "random_ratio_median": 0.905712822694711,
+  "random_ratio_min": 0.6957246062719411,
+  "random_ratio_max": 1.4546818822254808,
+  "random_better_than_no_change": 26,
+  "per_kind": {
+    "random": {
+      "rmse_model": 0.0001893198959560301,
+      "rmse_persistence": 0.00021993757989085953
+    },
+    "named": {
+      "rmse_model": 0.00024211776507599236,
+      "rmse_persistence": 0.0003252995969733218
+    },
+    "training": {
+      "rmse_model": 0.0001100596172505932,
+      "rmse_persistence": 0.00017501691721386978
+    },
+    "seen": {
+      "rmse_model": 0.00012443032417528972,
+      "rmse_persistence": 0.00017954146488784612
+    }
+  }
+}

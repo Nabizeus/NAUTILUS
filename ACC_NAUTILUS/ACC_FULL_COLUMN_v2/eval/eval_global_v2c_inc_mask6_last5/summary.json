@@ -1,0 +1,24 @@
+{
+  "checkpoint": "./checkpoints/v2c_inc_mask6_North_Atlantic_big_best_model.pt",
+  "training_region": "North_Atlantic_big",
+  "test_windows": 128,
+  "n_random": 50,
+  "random_ratio_median": 0.9873946556546622,
+  "random_ratio_min": 0.8191083390087659,
+  "random_ratio_max": 1.1484469693842645,
+  "random_better_than_no_change": 31,
+  "per_kind": {
+    "random": {
+      "rmse_model": 0.00019503778052334795,
+      "rmse_persistence": 0.00019740158924750261
+    },
+    "named": {
+      "rmse_model": 0.0003572140024971534,
+      "rmse_persistence": 0.0003613078383806141
+    },
+    "training": {
+      "rmse_model": 4.0778341565487274e-05,
+      "rmse_persistence": 4.335146960886014e-05
+    }
+  }
+}

@@ -1,0 +1,165 @@
+#!/bin/bash
+#SBATCH --job-name=NAUT_S323D
+#SBATCH -D .
+#SBATCH --output=server_s323D_%j.out  # %j: JobId
+#SBATCH --error=server_s323D_%j.err
+#SBATCH --ntasks=12              
+#SBATCH --time=02:00:00          # Max run time 24:00:00
+#SBATCH --account=bsc32
+#SBATCH --qos=gp_debug  #gp_debug #acc_bsces up to 24:00:00
+#SBATCH --cpus-per-task=64
+#SBATCH --mail-type=all
+#SBATCH --mail-user=nabiz.rahpoe@bsc.es
+
+
+###"""
+###from Chiara
+### Queue type. Options: ps, SGE, LSF, SLURM, PBS, eceaccess
+###TYPE = slurm
+###HOST = glogin2.bsc.es
+###PROJECT = cns113
+##USER = bsc082130
+###QUEUE = gp_resa
+###SCRATCH_DIR = /gpfs/scratch
+##ADD_PROJECT_TO_HOST = false
+##MAX_WALLCLOCK = 48:00
+###"""
+
+
+#Vxarray>=2024.1.0
+#numpy>=1.24.0
+#Vtorch>=2.1.0
+#Vpyyaml>=6.0.1
+#Vtqdm>=4.66.0
+#VnetCDF4>=1.6.5
+#Vscipy>=1.11.0
+module load PyYAML/6.0.1-GCCcore-13.2.0
+module load tqdm/4.66.2-GCCcore-13.2.0
+module load PyTorch/2.1.2-foss-2023b-Python-3.11.5
+module load imageio/2.34.1-gfbf-2023b
+# load modules or conda environments here
+#module load netcdf4-python/1.6.5-foss-2023b
+#module load TensorFlow/2.15.1-foss-2023b-Python-3.11.5
+#module load statsmodels/0.14.1-gfbf-2023b
+module load xarray/2024.5.0-gfbf-2023b-Python-3.11.5
+#module load matplotlib/3.8.2-gfbf-2023b
+module load SciPy-bundle/2023.11-gfbf-2023b
+#module load Seaborn/0.13.2-gfbf-2023b-Python-3.11.5
+#module load dask/2024.5.1-gfbf-2023b-Python-3.11.5
+#module load scikit-learn/1.4.0-gfbf-2023b
+#module unload impi
+#module load openmpi/4.1.5
+#module load scikit-image/0.24.0-foss-2023b
+
+module load hdf5
+module load python
+echo "Modules Loaded...."
+
+# Files
+#dir="/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/"
+
+#mytrc="a95g_1ts_19710101_19711231_opa_grid_T_2D.nc" 
+#mlotst: (ocean_mixed_layer_thickness_defined_by_sigma_theta)
+#omld (ocean_mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
+#umo="a95g_1ts_19710101_19711231_opa_grid_U_3D.nc"
+#umo Effective ocean transport along i-axis
+#vmo="a95g_1ts_19710101_19711231_opa_grid_V_3D.nc"
+#vmo Effective ocean transport along j-axis
+#wmo="a95g_1ts_19710101_19711231_opa_grid_W_3D.nc"
+#wmo effective ocean vertical transport
+#difvso vertical salt diffusivity * e3w
+#echo "Runtime directory: " $dir
+
+
+# Run the Ocean Emulator
+
+#echo "Start NAUTILIUS DEBUGGGG"
+#python -u -m src.debug_forward --config config/default.yaml > nautilus.log 2>&1
+#tail -n +1 nautilus.log
+#echo "End training----"
+
+
+
+epoch=100
+inp=4
+lev=5
+split=8099
+
+TIMESTAMP_HH=$(date -u +"%Y_%m_%d_%H:%M:%S")
+echo "${TIMESTAMP_HH}"
+arch="conv2dlstm_s323D_GPU" 
+write_out="/gpfs/scratch/bsc32/bsc032196/nautilus/"${arch}"/depth_"${lev}"_inp_"${inp}"_ep"${epoch}"_splt"${split}"_mld_2500p/results_lev"${lev}"_"${TIMESTAMP_HH}
+
+echo "Writing files prediction, logs, nemo_restart and debugs to GPFS SCRATCH......... ##########"
+
+mkdir -p "${write_out}"
+echo "write out to..." ${write_out}
+echo ${write_out} >> "list_s323D_exp_gpfs_scratch.dat"
+
+
+#cp -r config $write_out
+#cp -r predictions $write_out
+#cp -r logs $write_out
+#cp -r nemo_restart $write_out
+#cp -r activations $write_out
+#cp -r artifacts $write_out
+#cp -r server $write_out
+#cp -r checkpoints $write_out
+#cp -r profiler $write_out
+
+
+
+#rm checkpoints/*.pt
+#rm logs/*.*
+#rm profiler/*.*
+
+
+CMD_ARGS="
+training.epochs=$epoch
+data.window.input_steps=$inp
+model.max_below=$lev
+model.max_above=$lev
+"
+
+#echo "Start NAUTILIUS TRAIN!!!!"
+#python -m src.train  > nautilus_s323D.log 2>&1
+#tail -n +1 nautilus_s323D.log
+#echo "End training----"
+
+echo "Start NAUTILIUS PREDICT!!!"
+python3 -m src.predict  >> nautilus_s323D.log 
+tail -n +1 nautilus_s323D.log
+echo "End NAUTILUS ##########"
+
+
+
+#python -m src.train $CMD_ARGS > nautilus.log 2>&1
+#python3 -m src.train \
+#       training.epochs=$epoch \
+#       data.window.input_steps=$inp \
+#       data.vertical_levels=$lev \
+#       > nautilus.log 2>&1
+
+
+
+
+
+echo "Err/Out in server..."
+rm server/*.*
+mv server_*.* server
+
+cp -r predictions $write_out
+cp -r logs $write_out
+cp -r nemo_restart $write_out
+cp -r activations $write_out
+cp -r artifacts $write_out
+cp -r server $write_out
+cp -r checkpoints $write_out
+cp -r profiler $write_out
+
+
+cp sbatch*.job $write_out
+
+
+echo "Copied current results to GPFS SCRATCH!  ##########" "${write_out}"
+

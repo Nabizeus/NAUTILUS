@@ -1,0 +1,5 @@
+Reference  stats: min=0.060573 max=0.843803 mean=0.490802
+Fortran    stats: min=0.060573 max=0.843803 mean=0.490802
+Max abs diff: 1.788139e-07
+Max rel diff: 3.778405e-07
+PASS: Fortran output matches the Python-traced model within tolerance.

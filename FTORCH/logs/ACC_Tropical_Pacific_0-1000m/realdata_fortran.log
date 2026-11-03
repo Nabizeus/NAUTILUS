@@ -1,0 +1,23 @@
+ [1/4] Loading model from metadata: ftorch_export/nautilus_Tropical_Pacific_metadata.json
+ NAUTILUS model loaded from ftorch_export/nautilus_Tropical_Pacific.pt
+ T=           4  C=           6  Z=          75  H=          36  W=          14
+ [2/4] Reading raw NEMO fields from: realdata
+       raw_tracer.bin min=   0.00000000      max=   1.75818524E-04
+       raw_u.bin min=  -449894240.      max=   468965056.    
+       raw_v.bin min=  -759848704.      max=   988254336.    
+       raw_w.bin min=  -1.33196506E+09  max=   956585152.    
+       raw_dif.bin min=   0.00000000      max=   100.010040    
+       ocean cells:         504  land cells:           0
+ [3/4] Pushing            4  real time steps
+    step           1 : tracer   0.00000000     ..   1.75818524E-04  mld   10.7577076     ..   50.4238853      m
+         pushed. history_ready= F
+    step           2 : tracer   0.00000000     ..   1.75818437E-04  mld   10.7577028     ..   57.3701019      m
+         pushed. history_ready= F
+    step           3 : tracer   0.00000000     ..   1.75818364E-04  mld   10.7576818     ..   57.3700981      m
+         pushed. history_ready= F
+    step           4 : tracer   0.00000000     ..   1.75818306E-04  mld   10.7576809     ..   57.3700905      m
+         pushed. history_ready= T
+ [4/4] Running forward()
+       normalized input : min=  -5.56795120      max=   4.67110872    
+       prediction (phys): min=  -3.00255895E-04  max=   1.65317993E-04
+ Done. Wrote fortran_input.bin and fortran_pred_phys.bin to realdata

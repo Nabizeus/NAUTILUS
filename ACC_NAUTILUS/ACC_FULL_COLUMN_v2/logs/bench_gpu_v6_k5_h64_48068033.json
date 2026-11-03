@@ -1,0 +1,223 @@
+{
+  "config": "config/nautilus_v6_k5_h64.yaml",
+  "checkpoint": "none",
+  "domain": [
+    292,
+    362
+  ],
+  "halo": 8,
+  "arch": "conv2dlstm",
+  "hidden_dim": 64,
+  "share": 1,
+  "rank": 0,
+  "runs": [
+    {
+      "tracers": 1,
+      "tiles": 1,
+      "tile_shape": [
+        292,
+        362
+      ],
+      "batch": 1,
+      "calls": 1,
+      "seconds_per_step": 0.5357377941254526,
+      "best_seconds_per_step": 0.5354196289554238,
+      "seconds_per_tracer": 0.5357377941254526,
+      "peak_gpu_memory_gb": 38.51463079452515,
+      "device": "cuda",
+      "precision": "fp32",
+      "tile": "whole domain"
+    },
+    {
+      "tracers": 24,
+      "tiles": 1,
+      "tile_shape": [
+        292,
+        362
+      ],
+      "batch": 1,
+      "calls": 24,
+      "seconds_per_step": 12.848887332947925,
+      "best_seconds_per_step": 12.847729250090197,
+      "seconds_per_tracer": 0.5353703055394968,
+      "peak_gpu_memory_gb": 38.51463079452515,
+      "device": "cuda",
+      "precision": "fp32",
+      "tile": "whole domain"
+    },
+    {
+      "tracers": 1,
+      "tiles": 9,
+      "tile_shape": [
+        144,
+        144
+      ],
+      "batch": 4,
+      "calls": 3,
+      "seconds_per_step": 0.9310459550470114,
+      "best_seconds_per_step": 0.9308577619958669,
+      "seconds_per_tracer": 0.9310459550470114,
+      "peak_gpu_memory_gb": 30.223632335662842,
+      "device": "cuda",
+      "precision": "fp32",
+      "tile": 128
+    },
+    {
+      "tracers": 24,
+      "tiles": 9,
+      "tile_shape": [
+        144,
+        144
+      ],
+      "batch": 6,
+      "calls": 36,
+      "seconds_per_step": 22.319671319099143,
+      "best_seconds_per_step": 22.31857465999201,
+      "seconds_per_tracer": 0.9299863049624643,
+      "peak_gpu_memory_gb": 45.33036756515503,
+      "device": "cuda",
+      "precision": "fp32",
+      "tile": 128
+    },
+    {
+      "tracers": 1,
+      "tiles": 30,
+      "tile_shape": [
+        80,
+        80
+      ],
+      "batch": 15,
+      "calls": 2,
+      "seconds_per_step": 0.9528949931263924,
+      "best_seconds_per_step": 0.952687906101346,
+      "seconds_per_tracer": 0.9528949931263924,
+      "peak_gpu_memory_gb": 34.98065137863159,
+      "device": "cuda",
+      "precision": "fp32",
+      "tile": 64
+    },
+    {
+      "tracers": 24,
+      "tiles": 30,
+      "tile_shape": [
+        80,
+        80
+      ],
+      "batch": 22,
+      "calls": 33,
+      "seconds_per_step": 22.858711228938773,
+      "best_seconds_per_step": 22.856168389786035,
+      "seconds_per_tracer": 0.9524463012057822,
+      "peak_gpu_memory_gb": 51.29960584640503,
+      "device": "cuda",
+      "precision": "fp32",
+      "tile": 64
+    },
+    {
+      "tracers": 1,
+      "tiles": 1,
+      "tile_shape": [
+        292,
+        362
+      ],
+      "batch": 1,
+      "calls": 1,
+      "seconds_per_step": 0.3532527689822018,
+      "best_seconds_per_step": 0.3532151049003005,
+      "seconds_per_tracer": 0.3532527689822018,
+      "peak_gpu_memory_gb": 26.229186534881592,
+      "device": "cuda",
+      "precision": "fp16 autocast",
+      "tile": "whole domain"
+    },
+    {
+      "tracers": 24,
+      "tiles": 1,
+      "tile_shape": [
+        292,
+        362
+      ],
+      "batch": 1,
+      "calls": 24,
+      "seconds_per_step": 8.46961600589566,
+      "best_seconds_per_step": 8.468253260944039,
+      "seconds_per_tracer": 0.35290066691231914,
+      "peak_gpu_memory_gb": 26.229186534881592,
+      "device": "cuda",
+      "precision": "fp16 autocast",
+      "tile": "whole domain"
+    },
+    {
+      "tracers": 1,
+      "tiles": 9,
+      "tile_shape": [
+        144,
+        144
+      ],
+      "batch": 9,
+      "calls": 1,
+      "seconds_per_step": 0.6056615519337356,
+      "best_seconds_per_step": 0.6055613679345697,
+      "seconds_per_tracer": 0.6056615519337356,
+      "peak_gpu_memory_gb": 46.30809545516968,
+      "device": "cuda",
+      "precision": "fp16 autocast",
+      "tile": 128
+    },
+    {
+      "tracers": 24,
+      "tiles": 9,
+      "tile_shape": [
+        144,
+        144
+      ],
+      "batch": 6,
+      "calls": 36,
+      "seconds_per_step": 14.543024105019867,
+      "best_seconds_per_step": 14.542254308937117,
+      "seconds_per_tracer": 0.6059593377091611,
+      "peak_gpu_memory_gb": 30.87122106552124,
+      "device": "cuda",
+      "precision": "fp16 autocast",
+      "tile": 128
+    },
+    {
+      "tracers": 1,
+      "tiles": 30,
+      "tile_shape": [
+        80,
+        80
+      ],
+      "batch": 30,
+      "calls": 1,
+      "seconds_per_step": 0.6261580130085349,
+      "best_seconds_per_step": 0.6261083900462836,
+      "seconds_per_tracer": 0.6261580130085349,
+      "peak_gpu_memory_gb": 47.64203405380249,
+      "device": "cuda",
+      "precision": "fp16 autocast",
+      "tile": 64
+    },
+    {
+      "tracers": 24,
+      "tiles": 30,
+      "tile_shape": [
+        80,
+        80
+      ],
+      "batch": 22,
+      "calls": 33,
+      "seconds_per_step": 15.029490489978343,
+      "best_seconds_per_step": 15.023795245913789,
+      "seconds_per_tracer": 0.6262287704157643,
+      "peak_gpu_memory_gb": 34.93616247177124,
+      "device": "cuda",
+      "precision": "fp16 autocast",
+      "tile": 64
+    }
+  ],
+  "parameters": 389825,
+  "gflops_per_call_global": 23794.5623424,
+  "gpu": "NVIDIA H100",
+  "cpu_threads": 20
+}

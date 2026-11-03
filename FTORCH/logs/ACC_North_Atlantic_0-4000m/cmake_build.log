@@ -1,0 +1,15 @@
+[ 10%] Building Fortran object CMakeFiles/nautilus_ftorch_interface.dir/nautilus_ftorch_interface.F90.o
+[ 20%] Linking Fortran static library libnautilus_ftorch_interface.a
+[ 20%] Built target nautilus_ftorch_interface
+[ 30%] Building Fortran object CMakeFiles/test_nautilus_crosscheck.dir/test_nautilus_crosscheck.F90.o
+[ 40%] Building Fortran object CMakeFiles/test_nautilus_dummy_driver.dir/test_nautilus_dummy_driver.F90.o
+[ 50%] Building Fortran object CMakeFiles/test_nautilus_benchmark.dir/test_nautilus_benchmark.F90.o
+[ 60%] Building Fortran object CMakeFiles/test_nautilus_realdata.dir/test_nautilus_realdata.F90.o
+[ 70%] Linking Fortran executable test_nautilus_benchmark
+[ 80%] Linking Fortran executable test_nautilus_crosscheck
+[ 90%] Linking Fortran executable test_nautilus_dummy_driver
+[100%] Linking Fortran executable test_nautilus_realdata
+[100%] Built target test_nautilus_dummy_driver
+[100%] Built target test_nautilus_benchmark
+[100%] Built target test_nautilus_crosscheck
+[100%] Built target test_nautilus_realdata

@@ -1,0 +1,23 @@
+ [1/4] Loading model from metadata: ftorch_export/nautilus_North_Atlantic_metadata.json
+ NAUTILUS model loaded from ftorch_export/nautilus_North_Atlantic.pt
+ T=           4  C=           6  Z=          75  H=          25  W=          20
+ [2/4] Reading raw NEMO fields from: realdata
+       raw_tracer.bin min=   0.00000000      max=   5.38958884E-05
+       raw_u.bin min=  -1.46190323E+09  max=   540347648.    
+       raw_v.bin min=  -1.39316723E+09  max=   759969920.    
+       raw_w.bin min=  -5.71695053E+09  max=   2.35714534E+09
+       raw_dif.bin min=   0.00000000      max=   100.010132    
+       ocean cells:         464  land cells:          36
+ [3/4] Pushing            4  real time steps
+    step           1 : tracer   0.00000000     ..   5.38956847E-05  mld   0.00000000     ..   1096.66956      m
+         pushed. history_ready= F
+    step           2 : tracer   0.00000000     ..   5.38957574E-05  mld   0.00000000     ..   1096.66870      m
+         pushed. history_ready= F
+    step           3 : tracer   0.00000000     ..   5.38958229E-05  mld   0.00000000     ..   1096.66785      m
+         pushed. history_ready= F
+    step           4 : tracer   0.00000000     ..   5.38958884E-05  mld   0.00000000     ..   1096.66687      m
+         pushed. history_ready= T
+ [4/4] Running forward()
+       normalized input : min=  -31.6446857      max=   16.9744320    
+       prediction (phys): min=  -3.83270390E-06  max=   5.47230156E-05
+ Done. Wrote fortran_input.bin and fortran_pred_phys.bin to realdata

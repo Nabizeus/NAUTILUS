@@ -1,0 +1,35 @@
+{
+  "checkpoint": "./checkpoints/v5_k10_avg_multi4_best_model.pt",
+  "training_region": "multi4",
+  "test_windows": 378,
+  "n_random": 37,
+  "n_seen": 13,
+  "training_regions": [
+    "North_Atlantic_big",
+    "Tropical_Pacific_W",
+    "Southern_Ocean_AI",
+    "South_Atlantic"
+  ],
+  "random_ratio_median": 0.779486790766066,
+  "random_ratio_min": 0.4762218139275377,
+  "random_ratio_max": 1.046657779550253,
+  "random_better_than_no_change": 35,
+  "per_kind": {
+    "random": {
+      "rmse_model": 0.0003278983529069825,
+      "rmse_persistence": 0.00038585154562530225
+    },
+    "named": {
+      "rmse_model": 0.0004507278592680107,
+      "rmse_persistence": 0.0005643413702938547
+    },
+    "training": {
+      "rmse_model": 0.00021993941151282606,
+      "rmse_persistence": 0.00030536747627800403
+    },
+    "seen": {
+      "rmse_model": 0.00022008136600884447,
+      "rmse_persistence": 0.0003174825383294213
+    }
+  }
+}

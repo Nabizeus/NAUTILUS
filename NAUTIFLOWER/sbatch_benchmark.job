@@ -1,0 +1,66 @@
+#!/bin/bash
+#SBATCH --job-name=NAUTILUS_bench
+#SBATCH -D .
+#SBATCH --output=server/bench_%j.out
+#SBATCH --error=server/bench_%j.err
+#SBATCH --ntasks=1
+#SBATCH --time=01:00:00
+#SBATCH --account=bsc32
+#SBATCH --qos=acc_bsces #gp_debug #acc_bsces up to 24:00:00
+#SBATCH --cpus-per-task=20
+#SBATCH --gres=gpu:1
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=nabiz.rahpoe@bsc.es
+
+# ---------------------------------------------------------------------
+# GPU/ACC version of sbatch_fullcolumn_S323.job — same full-column code,
+# same `python -m src.train` / `python -m src.predict` invocation, same
+# --config support, just the GPU-specific module list + PYTHONPATH
+# carried over from the old (pre-full-column) GPU job, which is known
+# to have worked on this cluster's ACC/INTEL-Python environment.
+#
+# Use conv2dlstm_s323D_fullcolumn_GPU.yaml (or point --config at any
+# depth-sweep config) — the only difference from the CPU yaml is a
+# handful of device/hardware fields; everything else is identical.
+# ---------------------------------------------------------------------
+
+module purge
+module load PyYAML/6.0.1-GCCcore-13.2.0
+module load tqdm/4.66.2-GCCcore-13.2.0
+module load PyTorch/2.3.0-foss-2023b-CUDA-12.4.0
+module load imageio/2.34.1-gfbf-2023b
+module load scikit-learn/1.4.0-gfbf-2023b   # dashboard_predict.py imports sklearn
+module load Seaborn/0.13.2-gfbf-2023b-Python-3.11.5   # v3: dashboard theme (optional, falls back to matplotlib)
+
+# Hydra/OmegaConf aren't on the ACC/INTEL Python's default path —
+# predict.py needs them. This mirrors the old GPU job's exact check;
+# if it fails here, you need $HOME/python_extra set up on THIS
+# cluster/account the same way it was for the old GPU runs.
+HYDRA_PATH="$HOME/python_extra"
+if [ ! -d "$HYDRA_PATH" ]; then
+    echo "===================================="
+    echo "ERROR: Missing Hydra/OmegaConf path:"
+    echo "ERROR: Cannot find $HYDRA_PATH"
+    echo "===================================="
+    exit 1
+fi
+export PYTHONPATH="$HYDRA_PATH:$PYTHONPATH"
+
+module load xarray/2024.5.0-gfbf-2023b-Python-3.11.5
+module load SciPy-bundle/2023.11-gfbf-2023b
+module load netcdf4-python/1.7.1.post2-foss-2023b
+module load h5netcdf/1.6.1-foss-2023b-Python-3.11.5
+
+echo "Modules Loaded...."
+
+nvidia-smi --query-gpu=name,memory.total --format=csv
+# Inference speed of the reference model (run 3, v4_multi4_long) over the global
+# ORCA1 domain, GPU fp32 / fp16 and CPU fp32, for 1 and 24 tracers.
+#     sbatch --qos=acc_debug sbatch_benchmark.job
+CONFIG="${CONFIG:-config/nautilus_v4_multi4_long.yaml}"
+CKPT="${CKPT:-checkpoints/v4_multi4_long_multi4_best_model.pt}"
+export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK:-20}
+export PYTHONUNBUFFERED=1
+echo "git commit: $(git rev-parse --short HEAD 2>/dev/null); CPU threads ${OMP_NUM_THREADS}"
+python -m src.benchmark_inference --config "${CONFIG}" --checkpoint "${CKPT}" \
+    --tracers 1 24 --height 292 --width 362 --tiles 128 64 --halo 8 --cpu-batch 2 --out "logs/benchmark_inference_${SLURM_JOB_ID}.json"

@@ -1,0 +1,302 @@
+#!/bin/bash
+#SBATCH --job-name=ftorch_pipeline
+#SBATCH -D .
+#SBATCH --output=server/ftorch_pipeline_%j.out
+#SBATCH --error=server/ftorch_pipeline_%j.err
+#SBATCH --ntasks=1
+#SBATCH --time=01:00:00
+#SBATCH --account=bsc32
+#SBATCH --qos=gp_debug
+#SBATCH --cpus-per-task=16
+#SBATCH --mail-type=all
+#SBATCH --mail-user=nabiz.rahpoe@bsc.es
+
+# ===========================================================================
+# End-to-end CPU pipeline: export trained NAUTILUS checkpoint -> TorchScript,
+# numeric cross-check of the Fortran<->PyTorch tensor layout, build the
+# Fortran interface + test programs against FTorch/libtorch, then run the
+# cross-check and a dummy full-pipeline smoke test.
+#
+# Assumes: training has already produced
+#   checkpoints/ocean_transport_fullcolumn_<REGION>_best_model.pt
+#   norms/norm_stats_<REGION>.npz
+# (i.e. sbatch_fullcolumn_S323.job has already been run once for REGION).
+#
+# Prerequisite (once): bash install_ftorch_deps.sh   -- builds FTorch v1.0.0
+# and json-fortran from source into $HOME/nautilus_deps (not available as
+# modules on MareNostrum 5).
+# ===========================================================================
+
+set -eo pipefail
+
+# ---------------------------------------------------------------------
+# Same Python environment as sbatch_fullcolumn_S323.job (training job)
+# ---------------------------------------------------------------------
+module load PyYAML/6.0.1-GCCcore-13.2.0
+module load tqdm/4.66.2-GCCcore-13.2.0
+module load PyTorch/2.1.2-foss-2023b-Python-3.11.5
+module load imageio/2.34.1-gfbf-2023b
+module load xarray/2024.5.0-gfbf-2023b-Python-3.11.5
+module load SciPy-bundle/2023.11-gfbf-2023b
+module load hdf5
+module load python
+echo "Python modules loaded."
+
+# ---------------------------------------------------------------------
+# Build toolchain + FTorch / json-fortran.
+#
+# FTorch and json-fortran are NOT modules on MareNostrum 5. They are built
+# from source ONCE with install_ftorch_deps.sh, which writes
+# ${NAUTILUS_DEPS}/env_ftorch.sh. We source that here.
+#
+# No `module load GCC`: the PyTorch/2.1.2-foss-2023b module loaded above
+# already brings GCC 13.2.0 (gfortran/gcc/g++), and the Fortran code must be
+# compiled with the same toolchain libtorch was built against.
+# ---------------------------------------------------------------------
+# Pinned: the default CMake module is built on GCCcore-14.3.0 and would
+# replace the GCC 13.2.0 toolchain that libtorch was built with.
+module load CMake/3.27.6-GCCcore-13.2.0
+
+NAUTILUS_DEPS="${NAUTILUS_DEPS:-$HOME/nautilus_deps}"
+ENV_FTORCH="${NAUTILUS_DEPS}/env_ftorch.sh"
+if [ ! -f "${ENV_FTORCH}" ]; then
+    echo "ERROR: ${ENV_FTORCH} not found." >&2
+    echo "FTorch/json-fortran are not installed yet. Run once, on a login node:" >&2
+    echo "    bash install_ftorch_deps.sh      (or PREFIX=<dir> bash install_ftorch_deps.sh," >&2
+    echo "                                       then NAUTILUS_DEPS=<dir> sbatch ...)" >&2
+    exit 1
+fi
+# shellcheck disable=SC1090
+source "${ENV_FTORCH}"
+echo "FTORCH_DIR=${FTORCH_DIR}"
+echo "JSON_FORTRAN_DIR=${JSON_FORTRAN_DIR}"
+echo "TORCH_DIR=${TORCH_DIR}"
+echo "gfortran: $(command -v gfortran)"
+
+# Live, readable output: no buffering, a timestamped banner per step, and
+# every shell command echoed if submitted with  VERBOSE=1 sbatch ...
+export PYTHONUNBUFFERED=1
+export GFORTRAN_UNBUFFERED_ALL=1
+step() { echo; echo "######## $(date +%H:%M:%S)  $*"; }
+if [ "${VERBOSE:-0}" = "1" ]; then set -x; fi
+
+# ---------------------------------------------------------------------
+# WHAT TO RUN. All of these can be set at submit time, e.g.
+#     SOURCE=ACC REGION=South_Pacific sbatch sbatch_ftorch_pipeline.job
+#
+#   SOURCE      which training folder the checkpoint comes from:
+#                 GPP  -> GPP_NAUTILUS/FULL_COLUMN       (CPU runs, default)
+#                 ACC  -> ACC_NAUTILUS/ACC_FULL_COLUMN   (GPU runs)
+#   REGION      region name as in the config (default North_Atlantic)
+#   TRAIN_DIR   training folder, if not one of the two above
+#   CONFIG      config file inside TRAIN_DIR
+#   CHECKPOINT  checkpoint inside TRAIN_DIR (e.g. one from checkpoints/depth_sweep/)
+#   TAG         name of this run; decides where results go (default SOURCE_REGION)
+#
+# WHERE THINGS GO (all under the folder you submit from):
+#   server/                 Slurm .out and .err of every job
+#   logs/<TAG>/             one log file per step
+#   runs/<TAG>/             ftorch_export/, crosscheck/, realdata/, build/
+# ---------------------------------------------------------------------
+PIPE_DIR="${SLURM_SUBMIT_DIR:-$PWD}"
+SOURCE="${SOURCE:-GPP}"
+REGION="${REGION:-North_Atlantic}"
+case "${SOURCE}" in
+    GPP) : "${TRAIN_DIR:=${PIPE_DIR}/../GPP_NAUTILUS/FULL_COLUMN}"
+         : "${CONFIG:=config/conv2dlstm_s323D_fullcolumn.yaml}" ;;
+    ACC) : "${TRAIN_DIR:=${PIPE_DIR}/../ACC_NAUTILUS/ACC_FULL_COLUMN}"
+         : "${CONFIG:=config/conv2dlstm_s323D_fullcolumn_GPU.yaml}" ;;
+    *)   if [ -z "${TRAIN_DIR:-}" ] || [ -z "${CONFIG:-}" ]; then
+             echo "ERROR: SOURCE=${SOURCE} is not GPP or ACC; set TRAIN_DIR and CONFIG yourself." >&2
+             exit 1
+         fi ;;
+esac
+TRAIN_DIR="$(cd "${TRAIN_DIR}" && pwd)"
+CHECKPOINT="${CHECKPOINT:-checkpoints/ocean_transport_fullcolumn_${REGION}_best_model.pt}"
+TAG="${TAG:-${SOURCE}_${REGION}}"
+
+RUN_DIR="${PIPE_DIR}/runs/${TAG}"
+LOG_DIR="${PIPE_DIR}/logs/${TAG}"
+mkdir -p "${RUN_DIR}" "${LOG_DIR}"
+# The Python steps expect src/, config/, checkpoints/ and norms/ in the
+# current folder: link them from the training folder into the run folder.
+for d in src config checkpoints norms; do
+    if [ ! -d "${TRAIN_DIR}/${d}" ]; then
+        echo "ERROR: ${TRAIN_DIR}/${d} not found." >&2
+        exit 1
+    fi
+    ln -sfn "${TRAIN_DIR}/${d}" "${RUN_DIR}/${d}"
+done
+cd "${RUN_DIR}"
+for f in "${CONFIG}" "${CHECKPOINT}" "norms/norm_stats_${REGION}.npz"; do
+    if [ ! -f "${f}" ]; then
+        echo "ERROR: ${TRAIN_DIR}/${f} not found." >&2
+        exit 1
+    fi
+done
+
+REALDATA_DIR="realdata"
+EXPORT_DIR="ftorch_export"
+CROSSCHECK_DIR="crosscheck"
+BUILD_DIR="build"
+
+echo "SOURCE     = ${SOURCE}"
+echo "REGION     = ${REGION}"
+echo "TRAIN_DIR  = ${TRAIN_DIR}"
+echo "CONFIG     = ${CONFIG}"
+echo "CHECKPOINT = ${CHECKPOINT}  ($(date -r "${CHECKPOINT}" '+%Y-%m-%d %H:%M'))"
+echo "RUN_DIR    = ${RUN_DIR}"
+echo "LOG_DIR    = ${LOG_DIR}"
+
+TIMESTAMP_HH=$(date -u +"%Y_%m_%d_%H:%M:%S")
+echo "${TIMESTAMP_HH} :: starting FTorch pipeline for ${TAG}"
+
+# ===========================================================================
+# STEP 1/7 (recap): TRAINING -- not re-run here. This job assumes
+# sbatch_fullcolumn_S323.job already produced the checkpoint + norm stats
+# listed above. Uncomment to chain them in one job instead:
+# python -m src.train > train_nautilus_s323D.log 2>&1
+# ===========================================================================
+
+# ===========================================================================
+# STEP 2/7: EXPORT trained checkpoint -> TorchScript + metadata JSON
+# ===========================================================================
+step "STEP 2/7: export"
+python "${PIPE_DIR}/export_nautilus_model.py" \
+    --config "${CONFIG}" \
+    --region "${REGION}" \
+    --checkpoint "${CHECKPOINT}" \
+    --out-dir "${EXPORT_DIR}" \
+    2>&1 | tee "${LOG_DIR}/export_nautilus.log"
+
+# ===========================================================================
+# STEP 3/7: NUMERIC CROSS-CHECK -- build a dummy input, get the Python
+# reference output now (Fortran side runs after the build step below).
+# ===========================================================================
+step "STEP 3/7: build dummy cross-check input + Python reference"
+python "${PIPE_DIR}/make_dummy_crosscheck_input.py" \
+    --export-dir "${EXPORT_DIR}" \
+    --region "${REGION}" \
+    --seed 0 \
+    --out-dir "${CROSSCHECK_DIR}" \
+    2>&1 | tee "${LOG_DIR}/crosscheck_python.log"
+
+# ===========================================================================
+# STEP 4/7: BUILD the Fortran interface + test programs against
+# FTorch + libtorch (+ json-fortran for metadata parsing).
+# ===========================================================================
+step "STEP 4/7: build Fortran interface + test programs"
+mkdir -p "${BUILD_DIR}"
+cd "${BUILD_DIR}"
+cmake "${PIPE_DIR}" \
+    -DCMAKE_Fortran_COMPILER=gfortran \
+    -DCMAKE_BUILD_TYPE=Release \
+    2>&1 | tee "${LOG_DIR}/cmake_configure.log"
+make -j"${SLURM_CPUS_PER_TASK:-4}" 2>&1 | tee "${LOG_DIR}/cmake_build.log"
+cd "${RUN_DIR}"
+echo "Build artifacts: ${BUILD_DIR}/test_nautilus_crosscheck ${BUILD_DIR}/test_nautilus_dummy_driver ${BUILD_DIR}/test_nautilus_realdata ${BUILD_DIR}/test_nautilus_benchmark"
+
+# ===========================================================================
+# STEP 5/7: RUN the cross-check and the dummy full-pipeline smoke test,
+# i.e. exercising exactly the load_model -> push_timestep x T -> forward
+# -> cleanup_model call sequence a real host driver would use.
+# ===========================================================================
+step "STEP 5/7: run cross-check + dummy driver smoke test"
+
+METADATA="${EXPORT_DIR}/nautilus_${REGION}_metadata.json"
+
+echo ">> Fortran numeric cross-check (compares against the Python-traced model)"
+"${BUILD_DIR}/test_nautilus_crosscheck" \
+    "${METADATA}" \
+    "${CROSSCHECK_DIR}/dummy_input.bin" \
+    "${CROSSCHECK_DIR}/fortran_output.bin" \
+    2>&1 | tee "${LOG_DIR}/crosscheck_fortran.log"
+
+python "${PIPE_DIR}/compare_outputs.py" \
+    --crosscheck-dir "${CROSSCHECK_DIR}" \
+    --fortran-output "${CROSSCHECK_DIR}/fortran_output.bin" \
+    2>&1 | tee "${LOG_DIR}/crosscheck_compare.log"
+
+echo ">> Fortran dummy full-pipeline smoke test (load_model/push_timestep/forward)"
+"${BUILD_DIR}/test_nautilus_dummy_driver" \
+    "${METADATA}" \
+    2>&1 | tee "${LOG_DIR}/dummy_driver.log"
+
+# ===========================================================================
+# STEP 6/7: REAL-DATA TEST -- one sample from the TEST period of the NEMO
+# data. Python writes the raw fields plus the reference (training data
+# loader + exported model); Fortran starts from the raw fields; the two are
+# compared, and the prediction is scored against the NEMO truth.
+# Set REALDATA_SAMPLE=<n> at submit time to pick another test sample.
+# ===========================================================================
+step "STEP 6/7: real NEMO data through the Fortran interface"
+if [ "${SKIP_REALDATA:-0}" = "1" ]; then
+echo "SKIP_REALDATA=1 -> skipping the real-data test"
+else
+
+echo ">> Python: extract raw fields + build reference (slow: loads the region's full year)"
+python "${PIPE_DIR}/make_realdata_crosscheck.py" \
+    --config "${CONFIG}" \
+    --region "${REGION}" \
+    --export-dir "${EXPORT_DIR}" \
+    --out-dir "${REALDATA_DIR}" \
+    ${REALDATA_SAMPLE:+--sample "${REALDATA_SAMPLE}"} \
+    2>&1 | tee "${LOG_DIR}/realdata_python.log"
+
+echo ">> Fortran: load_model -> push_timestep x T -> forward on the raw fields"
+"${BUILD_DIR}/test_nautilus_realdata" \
+    "${METADATA}" \
+    "${REALDATA_DIR}" \
+    2>&1 | tee "${LOG_DIR}/realdata_fortran.log"
+
+echo ">> Compare Fortran vs Python, and score against NEMO"
+python "${PIPE_DIR}/compare_realdata.py" --dir "${REALDATA_DIR}" \
+    2>&1 | tee "${LOG_DIR}/realdata_compare.log"
+
+fi
+
+# ===========================================================================
+# STEP 7/7: TIMING -- one forward pass of the exported model on the same
+# input, with 1 thread (what one NEMO MPI process would have) and with all
+# the job's cores, in three setups:
+#   Fortran+FTorch          libtorch 2.1.2 (what the Fortran interface uses)
+#   Python, same libtorch   torch 2.1.2 from the PyTorch module
+#   Python, training env    the torch this job's `python` provides
+# Normalization and file reading are not timed. Set BENCH_REPS=<n> to change
+# the number of timed runs (default 10; 5 for the 1-thread runs).
+# ===========================================================================
+step "STEP 7/7: timing, Fortran+FTorch vs Python"
+BENCH_REPS="${BENCH_REPS:-10}"
+BENCH_WARMUP=2
+BENCH_INPUT="${CROSSCHECK_DIR}/dummy_input.bin"
+: > "${LOG_DIR}/benchmark.log"
+for NT in 1 "${SLURM_CPUS_PER_TASK:-4}"; do
+    if [ "${NT}" = "1" ]; then REPS=$(( (BENCH_REPS + 1) / 2 )); else REPS="${BENCH_REPS}"; fi
+    export OMP_NUM_THREADS="${NT}" MKL_NUM_THREADS="${NT}" OPENBLAS_NUM_THREADS="${NT}"
+
+    echo ">> ${NT} thread(s): Fortran + FTorch"
+    "${BUILD_DIR}/test_nautilus_benchmark" "${METADATA}" "${BENCH_INPUT}" "${REPS}" "${BENCH_WARMUP}" \
+        2>&1 | tee -a "${LOG_DIR}/benchmark.log"
+
+    echo ">> ${NT} thread(s): Python, same libtorch as Fortran (PyTorch 2.1.2 module)"
+    ( set +x
+      module purge > /dev/null 2>&1 || true
+      module load PyTorch/2.1.2-foss-2023b-Python-3.11.5 > /dev/null 2>&1
+      python "${PIPE_DIR}/benchmark_python.py" --export-dir "${EXPORT_DIR}" --region "${REGION}" \
+          --input "${BENCH_INPUT}" --threads "${NT}" --reps "${REPS}" --warmup "${BENCH_WARMUP}"
+    ) 2>&1 | tee -a "${LOG_DIR}/benchmark.log"
+
+    echo ">> ${NT} thread(s): Python, training environment"
+    python "${PIPE_DIR}/benchmark_python.py" --export-dir "${EXPORT_DIR}" --region "${REGION}" \
+        --input "${BENCH_INPUT}" --threads "${NT}" --reps "${REPS}" --warmup "${BENCH_WARMUP}" \
+        2>&1 | tee -a "${LOG_DIR}/benchmark.log"
+done
+unset OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS
+
+echo
+echo "TIMING SUMMARY: one forward pass (T x C x Z x H x W input, all depth levels), milliseconds"
+printf "%-28s %8s %6s %12s %12s %12s\n" "who" "threads" "runs" "mean_ms" "min_ms" "max_ms" | tee "${LOG_DIR}/benchmark_summary.log"
+grep "^ *BENCH " "${LOG_DIR}/benchmark.log" | sed 's/[a-z_]*=//g' | \
+    awk '{printf "%-28s %8s %6s %12s %12s %12s\n", $2, $3, $4, $5, $6, $7}' | tee -a "${LOG_DIR}/benchmark_summary.log"
+
+step "FTorch pipeline finished for ${TAG} (started ${TIMESTAMP_HH}). Results in ${LOG_DIR}: crosscheck_compare.log, dummy_driver.log, realdata_compare.log, benchmark_summary.log"

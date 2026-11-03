@@ -1,0 +1,20 @@
+-- The Fortran compiler identification is GNU 13.2.0
+-- The C compiler identification is Intel 2021.10.0.20230609
+-- The CXX compiler identification is Intel 2021.10.0.20230609
+-- Detecting Fortran compiler ABI info
+-- Detecting Fortran compiler ABI info - done
+-- Check for working Fortran compiler: /gpfs/projects/bsc32/software/rhel/9.2/software/GCCcore/13.2.0/bin/gfortran - skipped
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /gpfs/apps/MN5/GPP/ONEAPI/2023.2.0/compiler/latest/linux/bin/intel64/icc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /gpfs/apps/MN5/GPP/ONEAPI/2023.2.0/compiler/latest/linux/bin/intel64/icpc - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- FTorch found; json-fortran target: jsonfortran-gnu::jsonfortran
+-- Configuring done (5.9s)
+-- Generating done (0.1s)
+-- Build files have been written to: /gpfs/home/bsc/bsc032196/NAUTILUS/FTORCH/runs/ACC_South_Pacific_0-3000m/build

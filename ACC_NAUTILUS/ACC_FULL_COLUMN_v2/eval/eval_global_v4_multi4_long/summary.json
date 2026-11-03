@@ -1,0 +1,35 @@
+{
+  "checkpoint": "./checkpoints/v4_multi4_long_multi4_best_model.pt",
+  "training_region": "multi4",
+  "test_windows": 384,
+  "n_random": 37,
+  "n_seen": 13,
+  "training_regions": [
+    "North_Atlantic_big",
+    "Tropical_Pacific_W",
+    "Southern_Ocean_AI",
+    "South_Atlantic"
+  ],
+  "random_ratio_median": 0.6145933242694837,
+  "random_ratio_min": 0.3316842782753772,
+  "random_ratio_max": 0.8447584401465612,
+  "random_better_than_no_change": 37,
+  "per_kind": {
+    "random": {
+      "rmse_model": 3.360490335390539e-05,
+      "rmse_persistence": 4.799110257441243e-05
+    },
+    "named": {
+      "rmse_model": 4.1687629705029523e-05,
+      "rmse_persistence": 6.929537040374021e-05
+    },
+    "training": {
+      "rmse_model": 1.8227041654131052e-05,
+      "rmse_persistence": 3.741467705339542e-05
+    },
+    "seen": {
+      "rmse_model": 1.933223690299116e-05,
+      "rmse_persistence": 3.780407449151172e-05
+    }
+  }
+}

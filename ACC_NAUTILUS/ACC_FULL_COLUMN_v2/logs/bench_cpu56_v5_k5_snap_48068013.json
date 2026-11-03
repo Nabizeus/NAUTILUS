@@ -1,0 +1,52 @@
+{
+  "config": "config/nautilus_v5_k5_snap.yaml",
+  "checkpoint": "none",
+  "domain": [
+    292,
+    362
+  ],
+  "halo": 8,
+  "arch": "conv2dlstm",
+  "hidden_dim": 128,
+  "share": 1,
+  "rank": 0,
+  "runs": [
+    {
+      "tracers": 1,
+      "tiles": 1,
+      "tile_shape": [
+        292,
+        362
+      ],
+      "batch": 1,
+      "calls": 1,
+      "seconds_per_step": 29.772981757996604,
+      "best_seconds_per_step": 29.772981757996604,
+      "seconds_per_tracer": 29.772981757996604,
+      "peak_gpu_memory_gb": NaN,
+      "device": "cpu",
+      "precision": "fp32",
+      "tile": "whole domain"
+    },
+    {
+      "tracers": 1,
+      "tiles": 9,
+      "tile_shape": [
+        144,
+        144
+      ],
+      "batch": 2,
+      "calls": 5,
+      "seconds_per_step": 41.782030678819865,
+      "best_seconds_per_step": 41.782030678819865,
+      "seconds_per_tracer": 41.782030678819865,
+      "peak_gpu_memory_gb": NaN,
+      "device": "cpu",
+      "precision": "fp32",
+      "tile": 128
+    }
+  ],
+  "parameters": 1553793,
+  "gflops_per_call_global": 94933.6925952,
+  "cpu_threads": 56
+}

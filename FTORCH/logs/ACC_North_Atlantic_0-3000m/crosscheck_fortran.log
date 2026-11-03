@@ -1,0 +1,8 @@
+ Loading model from metadata: ftorch_export/nautilus_North_Atlantic_metadata.json
+ NAUTILUS model loaded from ftorch_export/nautilus_North_Atlantic.pt
+ T=           4  C=           6  Z=          75  H=          25  W=          20
+ Reading dummy input: crosscheck/dummy_input.bin
+ Input  stats: min=   1.78813934E-07  max=  0.999998987      mean=  0.500212133    
+ Output stats: min= -0.173179924      max=  0.752343178      mean=  0.279165119    
+ Writing Fortran output: crosscheck/fortran_output.bin
+ Done. Compare with: python compare_outputs.py --fortran-output crosscheck/fortran_output.bin

@@ -1,0 +1,38 @@
+#!/bin/bash
+#SBATCH --job-name=NAUTILUS_benchcc
+#SBATCH -D .
+#SBATCH --output=server/benchcc_%j.out
+#SBATCH --error=server/benchcc_%j.err
+#SBATCH --nodes=1
+#SBATCH --ntasks=112
+#SBATCH --cpus-per-task=1
+#SBATCH --exclusive
+#SBATCH --time=02:00:00
+# Every measurement is its own srun step: if one is killed, the job goes on with the next.
+#SBATCH --account=bsc32
+#SBATCH --qos=gp_debug
+# v7: CPU inference speed as a coupled NEMO run would see it, on one full GPP node (112 cores):
+# E (v6_k5_col256) against the graph models G (v7_k5_gnn*), random weights, real ORCA1 land mask, 1 tracer.
+# Every process is one rank with its own NEMO-like subdomain plus halo: 1 x 112 threads (whole domain),
+# 8 x 14 and 112 x 1. Each rank times fp32/bf16 x eager/TorchScript (src/benchmark_cpu_coupling.py).
+module purge
+module load PyYAML/6.0.1-GCCcore-13.2.0 tqdm/4.66.2-GCCcore-13.2.0 PyTorch/2.1.2-foss-2023b-Python-3.11.5 imageio/2.34.1-gfbf-2023b xarray/2024.5.0-gfbf-2023b-Python-3.11.5 SciPy-bundle/2023.11-gfbf-2023b netcdf4-python/1.7.1.post2-foss-2023b
+export PYTHONPATH="$HOME/python_extra:$PYTHONPATH"
+export PYTHONUNBUFFERED=1
+lscpu | grep -E "Model name|^CPU\(s\)|Thread|Core|Socket|amx"| cut -c1-200
+echo "git commit: $(git rev-parse --short HEAD 2>/dev/null)"
+J=${SLURM_JOB_ID}
+# without srun: netcdf4-python is built with OpenMPI, which aborts when started by srun
+[ -f logs/orca1_surface_ocean_mask.npy ] || OMP_NUM_THREADS=1 python -m src.benchmark_cpu_coupling --make-mask --config config/nautilus_v6_k5_col256.yaml
+for M in v6_k5_col256 v7_k5_gnn64 v7_k5_gnn128 v7_k5_gnn128grid v7_k5_gnn256; do
+    echo "######## $(date +%H:%M:%S) ${M}: 1 process x 112 threads, whole domain"
+    OMP_NUM_THREADS=112 srun --ntasks=1 --cpus-per-task=112 python -m src.benchmark_cpu_coupling \
+        --config config/nautilus_${M}.yaml --ranks 1 --rank 0 --repeats 3 --check --out "logs/benchcc_{tag}_{ranks}_{rank}_${J}.json"
+    echo "######## $(date +%H:%M:%S) ${M}: 8 processes x 14 threads"
+    OMP_NUM_THREADS=14 srun --ntasks=8 --cpus-per-task=14 --cpu-bind=cores python -m src.benchmark_cpu_coupling \
+        --config config/nautilus_${M}.yaml --repeats 5 --out "logs/benchcc_{tag}_{ranks}_{rank}_${J}.json"
+    echo "######## $(date +%H:%M:%S) ${M}: 112 processes x 1 thread"
+    OMP_NUM_THREADS=1 srun --ntasks=112 --cpus-per-task=1 --cpu-bind=cores python -m src.benchmark_cpu_coupling \
+        --config config/nautilus_${M}.yaml --repeats 5 --out "logs/benchcc_{tag}_{ranks}_{rank}_${J}.json"
+done
+echo "######## $(date +%H:%M:%S) DONE"

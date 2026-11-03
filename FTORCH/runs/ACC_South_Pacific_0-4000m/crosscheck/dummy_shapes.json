@@ -1,0 +1,21 @@
+{
+  "T": 4,
+  "C": 6,
+  "Z": 75,
+  "H": 24,
+  "W": 41,
+  "input_shape": [
+    1,
+    1800,
+    24,
+    41
+  ],
+  "output_shape": [
+    1,
+    75,
+    24,
+    41
+  ],
+  "input_file": "dummy_input.bin",
+  "reference_output_file": "dummy_output_reference.bin"
+}

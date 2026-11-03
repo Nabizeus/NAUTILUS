@@ -1,0 +1,16 @@
+region,epoch,train_loss,val_loss
+North_Atlantic_big,1,1.66121,1.31122
+North_Atlantic_big,2,1.49338,1.268
+North_Atlantic_big,3,1.46478,1.29068
+North_Atlantic_big,4,1.52655,1.26218
+North_Atlantic_big,5,1.53151,1.31538
+North_Atlantic_big,6,1.55374,1.29983
+North_Atlantic_big,7,1.69303,1.39541
+North_Atlantic_big,8,1.82159,1.79798
+North_Atlantic_big,9,1.68998,1.29243
+North_Atlantic_big,10,1.59735,1.36084
+North_Atlantic_big,11,1.69334,1.28837
+North_Atlantic_big,12,1.67689,1.36897
+North_Atlantic_big,13,1.61737,1.35035
+North_Atlantic_big,14,1.64351,1.32757
+North_Atlantic_big,15,1.71204,1.43822

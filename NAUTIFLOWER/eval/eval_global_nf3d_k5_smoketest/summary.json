@@ -1,0 +1,35 @@
+{
+  "checkpoint": "./checkpoints/nf3d_k5_smoketest_multi4_best_model.pt",
+  "training_region": "multi4",
+  "test_windows": 381,
+  "n_random": 37,
+  "n_seen": 13,
+  "training_regions": [
+    "North_Atlantic_big",
+    "Tropical_Pacific_W",
+    "Southern_Ocean_AI",
+    "South_Atlantic"
+  ],
+  "random_ratio_median": 0.8685068456051344,
+  "random_ratio_min": 0.6415967253946571,
+  "random_ratio_max": 1.5311294298787397,
+  "random_better_than_no_change": 28,
+  "per_kind": {
+    "random": {
+      "rmse_model": 0.00017683805753050807,
+      "rmse_persistence": 0.00021993757989085953
+    },
+    "named": {
+      "rmse_model": 0.0002246753746024509,
+      "rmse_persistence": 0.0003252995969733218
+    },
+    "training": {
+      "rmse_model": 0.00010885644920041183,
+      "rmse_persistence": 0.00017501691721386978
+    },
+    "seen": {
+      "rmse_model": 0.0001187022558183612,
+      "rmse_persistence": 0.00017954146488784612
+    }
+  }
+}

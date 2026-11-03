@@ -1,0 +1,8 @@
+{
+  "epochs_run": 26,
+  "best_epoch": 6,
+  "best_val_loss": 0.7708578556386982,
+  "stop_reason": "learning rate at its floor 1.0e-06 and no better validation loss for 10 epochs",
+  "final_lr": 1e-06,
+  "minutes": 81.01992061932881
+}

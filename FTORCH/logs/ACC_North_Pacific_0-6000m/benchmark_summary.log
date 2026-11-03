@@ -1,0 +1,7 @@
+who                           threads   runs      mean_ms       min_ms       max_ms
+Fortran+FTorch                      1      5      4109.32      4104.12      4114.04
+Python-torch-2.1.2                  1      5      4129.02      4113.10      4140.59
+Python-torch-2.3.0                  1      5      4235.72      4213.11      4254.91
+Fortran+FTorch                     16     10       534.55       528.47       540.43
+Python-torch-2.1.2                 16     10       546.40       538.07       557.59
+Python-torch-2.3.0                 16     10       531.67       529.40       535.01

@@ -1,0 +1,62 @@
+#!/bin/bash
+#SBATCH --job-name=TC_HEAT_depthsweep_heatmap
+#SBATCH -D .
+#SBATCH --output=server/server_depthsweep_heatmap_%j.out
+#SBATCH --error=server/server_depthsweep_heatmap_%j.err
+#SBATCH --ntasks=1
+#SBATCH --time=00:15:00          # this is just reading a CSV and plotting — minutes, not hours
+#SBATCH --account=bsc32
+#SBATCH --qos=gp_debug
+#SBATCH --cpus-per-task=4
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=nabiz.rahpoe@bsc.es
+#
+# ---------------------------------------------------------------------
+# Builds the depth-sweep heatmap from whatever's in the depth-skill CSV
+# so far. Run this AFTER every array task in sbatch_depth_sweep_array.job
+# has finished (or a subset — it just reads whatever rows exist).
+#
+# Submit manually once the array is done:
+#   sbatch sbatch_depth_sweep_heatmap.job
+#
+# Or chain it automatically after the array job (ARRAY_JOBID from the
+# `sbatch --array=...` submission output):
+#   sbatch --dependency=afterok:ARRAY_JOBID sbatch_depth_sweep_heatmap.job
+#
+# REGION / CHECKPOINT_REGION: set these if your sweep covers more than
+# one region (yours does: North_Atlantic + Ross_Sea) — otherwise rows
+# from different regions get averaged together in the same cell, which
+# mixes unrelated physical regimes. Pass via:
+#   sbatch --export=REGION=North_Atlantic,CHECKPOINT_REGION=North_Atlantic \
+#       sbatch_depth_sweep_heatmap.job
+#
+# ALL_PAIRS=1: build every (checkpoint region, test region) pair found in
+# the CSV in this one job — own-region and cross-region alike. CROSS_ONLY=1
+# does the same but skips the own-region pairs:
+#   sbatch --export=ALL_PAIRS=1 sbatch_depth_sweep_heatmap.job
+#
+# Output: plots/heatmaps/depth_sweep/<checkpoint>_to_<region>/
+# ---------------------------------------------------------------------
+
+module load PyYAML/6.0.1-GCCcore-13.2.0
+module load PyTorch/2.1.2-foss-2023b-Python-3.11.5
+module load xarray/2024.5.0-gfbf-2023b-Python-3.11.5
+module load SciPy-bundle/2023.11-gfbf-2023b
+module load hdf5
+module load python
+echo "Modules Loaded...."
+
+REGION_ARG=""
+if [ -n "$REGION" ]; then REGION_ARG="--region $REGION"; fi
+
+CKPT_REGION_ARG=""
+if [ -n "$CHECKPOINT_REGION" ]; then CKPT_REGION_ARG="--checkpoint-region $CHECKPOINT_REGION"; fi
+
+PAIRS_ARG=""
+if [ -n "$ALL_PAIRS" ]; then PAIRS_ARG="--all-pairs"; fi
+if [ -n "$CROSS_ONLY" ]; then PAIRS_ARG="--cross-only"; fi
+
+python3 run_depth_sweep.py --manifest "${MANIFEST:-configs/depth_sweep/cumulative/depth_sweep_manifest.csv}" \
+    --heatmap-only $REGION_ARG $CKPT_REGION_ARG $PAIRS_ARG
+
+echo "Heatmap build finished — see plots/heatmaps/depth_sweep/<checkpoint>_to_<region>/"

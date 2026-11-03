@@ -1,0 +1,37 @@
+#!/bin/bash
+#SBATCH --job-name=NAUTILUS_benchcpu
+#SBATCH -D .
+#SBATCH --output=server/benchcpu_%j.out
+#SBATCH --error=server/benchcpu_%j.err
+#SBATCH --nodes=1
+#SBATCH --ntasks=8
+#SBATCH --cpus-per-task=14
+#SBATCH --time=02:00:00
+# Every measurement is its own srun step: if one is killed, the job goes on with the next.
+#SBATCH --account=bsc32
+#SBATCH --qos=gp_debug
+# v6: CPU inference speed on one full GPP node (112 cores) of the reference (v5_k5_snap)
+# and the light models A, B, C, E, random weights, global ORCA1 domain, 1 tracer.
+# Part 1: one process with 112 threads, then with 56 threads (one socket). Part 2: 8 processes x 14 threads, each with
+# its own 1/8 of the 64-cell tiles (like MPI ranks); the node time is the slowest rank.
+module purge
+module load PyYAML/6.0.1-GCCcore-13.2.0 tqdm/4.66.2-GCCcore-13.2.0 PyTorch/2.1.2-foss-2023b-Python-3.11.5 imageio/2.34.1-gfbf-2023b xarray/2024.5.0-gfbf-2023b-Python-3.11.5 SciPy-bundle/2023.11-gfbf-2023b
+export PYTHONPATH="$HOME/python_extra:$PYTHONPATH"
+export PYTHONUNBUFFERED=1
+lscpu | grep -E "Model name|^CPU\(s\)|Thread|Core|Socket"
+echo "git commit: $(git rev-parse --short HEAD 2>/dev/null)"
+for M in v5_k5_snap v6_k5_h64 v6_k5_ds128 v6_k5_tc64 v6_k5_col256; do
+    echo "######## $(date +%H:%M:%S) ${M}: 1 process x 112 threads"
+    OMP_NUM_THREADS=112 srun --ntasks=1 --cpus-per-task=112 python -m src.benchmark_inference \
+        --config config/nautilus_${M}.yaml --checkpoint none --devices cpu --cpu-tracers 1 \
+        --tiles 0 128 64 --halo 8 --cpu-batch 2 --out logs/bench_cpu112_${M}_${SLURM_JOB_ID}.json
+    echo "######## $(date +%H:%M:%S) ${M}: 1 process x 56 threads (one socket)"
+    OMP_NUM_THREADS=56 srun --ntasks=1 --cpus-per-task=56 python -m src.benchmark_inference \
+        --config config/nautilus_${M}.yaml --checkpoint none --devices cpu --cpu-tracers 1 \
+        --tiles 0 128 --halo 8 --cpu-batch 2 --out logs/bench_cpu56_${M}_${SLURM_JOB_ID}.json
+    echo "######## $(date +%H:%M:%S) ${M}: 8 processes x 14 threads, 1/8 of the 64-cell tiles each"
+    OMP_NUM_THREADS=14 srun --ntasks=8 --cpus-per-task=14 python -m src.benchmark_inference \
+        --config config/nautilus_${M}.yaml --checkpoint none --devices cpu --cpu-tracers 1 \
+        --tiles 64 --halo 8 --cpu-batch 2 --share 8 --out "logs/bench_cpu8x14_${M}_${SLURM_JOB_ID}_rank{rank}.json"
+done
+echo "######## $(date +%H:%M:%S) DONE"

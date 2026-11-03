@@ -1,0 +1,7 @@
+[crosscheck] T=4 C=6 Z=75 H=36 W=14
+[crosscheck] loaded ftorch_export/nautilus_Tropical_Pacific.pt
+[crosscheck] wrote crosscheck/dummy_input.bin  (3628800 bytes)
+[crosscheck] wrote crosscheck/dummy_output_reference.bin (151200 bytes)
+[crosscheck] wrote crosscheck/dummy_shapes.json
+[crosscheck] input  stats: min=0.000000 max=0.999999 mean=0.500252
+[crosscheck] output stats: min=0.028866 max=0.855499 mean=0.394658

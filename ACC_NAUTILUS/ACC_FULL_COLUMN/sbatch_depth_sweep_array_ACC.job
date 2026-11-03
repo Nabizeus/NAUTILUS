@@ -1,0 +1,148 @@
+#!/bin/bash
+#SBATCH --job-name=depthsweep_ACC_fullcolumn
+#SBATCH -D .
+#SBATCH --output=server_depthsweep_ACC_%A_%a.out
+#SBATCH --error=server_depthsweep_ACC_%A_%a.err
+#SBATCH --ntasks=1
+#SBATCH --time=48:00:00
+#SBATCH --account=bsc32
+#SBATCH --qos=acc_bsces
+#SBATCH --cpus-per-task=20
+#SBATCH --gres=gpu:1
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=nabiz.rahpoe@bsc.es
+#
+# ---------------------------------------------------------------------
+# GPU/ACC depth-sweep array job — one array task = one config = one
+# full src.train + src.predict cycle, same manifest mechanics as
+# sbatch_depth_sweep_array.job (the CPU/gp_debug version), just with
+# the module list, PYTHONPATH, and GPU resource request verified
+# against the old working GPU job (sbatch_acc_NAUTILUS.job) instead of
+# guessed.
+#
+# IMPORTANT: generate the sweep configs from the GPU yaml, not the CPU
+# one, so every generated config inherits device: "cuda"/"auto":
+#   python3 generate_depth_sweep_configs.py \
+#       --base config/conv2dlstm_s323D_fullcolumn_GPU.yaml \
+#       --out-dir configs/depth_sweep/acc_cumulative \
+#       --mode cumulative --step 1000 --max-depth 6000
+#
+# Usage:
+#   sbatch --array=0-5 \
+#       --export=MANIFEST=configs/depth_sweep/acc_cumulative/depth_sweep_manifest.csv \
+#       sbatch_depth_sweep_array_ACC.job
+# ---------------------------------------------------------------------
+
+module purge
+module load PyYAML/6.0.1-GCCcore-13.2.0
+module load tqdm/4.66.2-GCCcore-13.2.0
+module load PyTorch/2.3.0-foss-2023b-CUDA-12.4.0
+module load imageio/2.34.1-gfbf-2023b
+module load scikit-learn/1.4.0-gfbf-2023b   # dashboard_predict.py imports sklearn
+
+# Hydra/OmegaConf aren't on the ACC/INTEL Python's default path —
+# src.predict needs them (same check as sbatch_fullcolumn_S323_GPU.job).
+HYDRA_PATH="$HOME/python_extra"
+if [ ! -d "$HYDRA_PATH" ]; then
+    echo "===================================="
+    echo "ERROR: Missing Hydra/OmegaConf path:"
+    echo "ERROR: Cannot find $HYDRA_PATH"
+    echo "===================================="
+    exit 1
+fi
+export PYTHONPATH="$HYDRA_PATH:$PYTHONPATH"
+
+module load xarray/2024.5.0-gfbf-2023b-Python-3.11.5
+module load SciPy-bundle/2023.11-gfbf-2023b
+module load netcdf4-python/1.7.1.post2-foss-2023b
+module load h5netcdf/1.6.1-foss-2023b-Python-3.11.5
+
+echo "Modules Loaded...."
+
+MANIFEST="${MANIFEST:-configs/depth_sweep/acc_cumulative/depth_sweep_manifest.csv}"
+
+if [ ! -f "$MANIFEST" ]; then
+    echo "❌ Manifest not found: $MANIFEST"
+    echo "   Run generate_depth_sweep_configs.py against the GPU yaml first (see header above)."
+    exit 1
+fi
+
+CONFIG_PATH=$(python3 -c "
+import csv
+with open('${MANIFEST}') as f:
+    rows = list(csv.DictReader(f))
+print(rows[${SLURM_ARRAY_TASK_ID}]['config_path'])
+")
+TAG=$(python3 -c "
+import csv
+with open('${MANIFEST}') as f:
+    rows = list(csv.DictReader(f))
+print(rows[${SLURM_ARRAY_TASK_ID}]['tag'])
+")
+
+echo "Array task ${SLURM_ARRAY_TASK_ID}: tag=${TAG}  config=${CONFIG_PATH}"
+
+if [ -z "$CONFIG_PATH" ]; then
+    echo "❌ No config found at manifest row ${SLURM_ARRAY_TASK_ID} — is --array sized correctly?"
+    exit 1
+fi
+
+# Sanity-check this config actually requests a GPU device before burning
+# a GPU allocation on a config that was accidentally generated from the
+# CPU yaml.
+DEVICE_CHECK=$(python3 -c "
+import yaml
+with open('${CONFIG_PATH}') as f:
+    cfg = yaml.safe_load(f)
+print(cfg.get('hardware', {}).get('device', 'MISSING'))
+")
+if [ "$DEVICE_CHECK" == "cpu" ]; then
+    echo "❌ ${CONFIG_PATH} has hardware.device: cpu — this config was generated from the"
+    echo "   CPU yaml, not the GPU one. Regenerate the sweep from config/conv2dlstm_s323D_fullcolumn_GPU.yaml."
+    exit 1
+fi
+echo "hardware.device = ${DEVICE_CHECK} — OK"
+
+echo "========== GPU CHECK =========="
+nvidia-smi
+echo "==============================="
+
+TIMESTAMP_HH=$(date -u +"%Y_%m_%d_%H:%M:%S")
+write_out="/gpfs/scratch/bsc32/bsc032196/nautilus/depth_sweep_acc/${TAG}/output_${TIMESTAMP_HH}"
+mkdir -p "${write_out}"
+echo "write out to... ${write_out}"
+
+echo "Start NAUTILUS TRAIN — ${TAG}"
+python -m src.train --config "${CONFIG_PATH}" > "train_${TAG}.log" 2>&1
+TRAIN_STATUS=$?
+tail -n +1 "train_${TAG}.log"
+
+if [ $TRAIN_STATUS -ne 0 ]; then
+    echo "❌ Training FAILED for ${TAG} (exit ${TRAIN_STATUS}) — skipping predict."
+    cp "train_${TAG}.log" "${write_out}/"
+    exit $TRAIN_STATUS
+fi
+echo "End training — ${TAG}"
+
+echo "Start NAUTILUS PREDICT — ${TAG}"
+python -m src.predict --config "${CONFIG_PATH}" > "predict_${TAG}.log" 2>&1
+PREDICT_STATUS=$?
+tail -n +1 "predict_${TAG}.log"
+echo "End NAUTILUS — ${TAG}"
+
+cp -r "${CONFIG_PATH}" "${write_out}/" 2>/dev/null
+cp -r predictions "${write_out}/" 2>/dev/null
+cp -r norms "${write_out}/" 2>/dev/null
+cp -r logs "${write_out}/" 2>/dev/null
+cp -r nemo_restart "${write_out}/" 2>/dev/null
+cp -r activations "${write_out}/" 2>/dev/null
+cp -r activations_dashboard "${write_out}/" 2>/dev/null
+cp -r weights_dashboard "${write_out}/" 2>/dev/null
+cp -r artifacts "${write_out}/" 2>/dev/null
+cp -r checkpoints "${write_out}/" 2>/dev/null
+cp -r profiler "${write_out}/" 2>/dev/null
+cp -r plots "${write_out}/" 2>/dev/null      # depth-skill CSVs live under plots/heatmaps
+cp "train_${TAG}.log" "predict_${TAG}.log" "${write_out}/" 2>/dev/null
+
+echo "Copied results for ${TAG} to GPFS SCRATCH: ${write_out}"
+exit $PREDICT_STATUS

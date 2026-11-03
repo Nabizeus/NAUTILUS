@@ -1,0 +1,15 @@
+{
+  "epochs_run": 68,
+  "best_epoch": 58,
+  "best_val_loss": 0.5393310480223841,
+  "stop_reason": "no better validation loss for 10 epochs",
+  "final_lr": 1.25e-05,
+  "regions": [
+    "North_Atlantic_big",
+    "Tropical_Pacific_W",
+    "Southern_Ocean_AI",
+    "South_Atlantic"
+  ],
+  "skipped_steps": 54,
+  "minutes": 560.4184803962708
+}

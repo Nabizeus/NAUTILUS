@@ -1,0 +1,35 @@
+{
+  "checkpoint": "./checkpoints/v5_k5_snap_multi4_best_model.pt",
+  "training_region": "multi4",
+  "test_windows": 381,
+  "n_random": 37,
+  "n_seen": 13,
+  "training_regions": [
+    "North_Atlantic_big",
+    "Tropical_Pacific_W",
+    "Southern_Ocean_AI",
+    "South_Atlantic"
+  ],
+  "random_ratio_median": 0.6122008172776434,
+  "random_ratio_min": 0.34922581948537573,
+  "random_ratio_max": 0.8550875790899032,
+  "random_better_than_no_change": 37,
+  "per_kind": {
+    "random": {
+      "rmse_model": 0.00015333892471332456,
+      "rmse_persistence": 0.00021993757989085953
+    },
+    "named": {
+      "rmse_model": 0.0002037307107458769,
+      "rmse_persistence": 0.0003252995969733218
+    },
+    "training": {
+      "rmse_model": 8.968774106799912e-05,
+      "rmse_persistence": 0.00017501691721386978
+    },
+    "seen": {
+      "rmse_model": 9.71794921375063e-05,
+      "rmse_persistence": 0.00017954146488784612
+    }
+  }
+}

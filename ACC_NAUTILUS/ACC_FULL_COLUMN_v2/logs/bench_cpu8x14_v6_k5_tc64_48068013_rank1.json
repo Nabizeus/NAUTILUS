@@ -1,0 +1,35 @@
+{
+  "config": "config/nautilus_v6_k5_tc64.yaml",
+  "checkpoint": "none",
+  "domain": [
+    292,
+    362
+  ],
+  "halo": 8,
+  "arch": "timestack",
+  "hidden_dim": 64,
+  "share": 8,
+  "rank": 1,
+  "runs": [
+    {
+      "tracers": 1,
+      "tiles": 4,
+      "tile_shape": [
+        80,
+        80
+      ],
+      "batch": 2,
+      "calls": 2,
+      "seconds_per_step": 1.5222079630475491,
+      "best_seconds_per_step": 1.5222079630475491,
+      "seconds_per_tracer": 1.5222079630475491,
+      "peak_gpu_memory_gb": NaN,
+      "device": "cpu",
+      "precision": "fp32",
+      "tile": 64
+    }
+  ],
+  "parameters": 171505,
+  "gflops_per_call_global": 2726.1484416,
+  "cpu_threads": 14
+}

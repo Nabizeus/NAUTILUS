@@ -1,0 +1,231 @@
+# =====================================================================
+# v3_multi_long (2026-10-18): as nautilus_v3_multi.yaml, up to 120 epochs.
+# =====================================================================
+# v3 (2026-10-17): ONE model trained on three regions (North Atlantic,
+# western/central tropical Pacific, Southern Ocean Atlantic-Indian sector),
+# pooled normalization, lr 1e-4, early stopping on validation patience only,
+# scheduler patience 6, dashboards with the first 10 test steps.
+# Code fixes in this version: model.train() every epoch, GradScaler with AMP.
+# Lines marked v3; everything else as v2c below.
+# =====================================================================
+# v2c (2026-10-16): as v2b_inc_mask6 (increment target, mask only in the data, 6 channels),
+# with a lower learning rate, an LR floor, more epochs and convergence-based stopping
+# (lines marked v2c).
+# v2b (2026-10-15): increment target, ocean mask only in the data (6 input channels)
+# Same as nautilus_v2_NA_mask3d.yaml except the lines marked "v2b".
+# =====================================================================
+# v2 experiment (2026-10-15): North Atlantic only, large box with coasts,
+# 3-D ocean mask, mask input channel, 70/15/15 split, random-patch
+# training, global evaluation on random regions (src/evaluate_global.py).
+# Uses src/data_v2.py. Differences from config/conv2dlstm_s323D_fullcolumn_GPU.yaml
+# are marked "v2".
+# =====================================================================
+data:
+  regions:
+  # v2: training box, ~10-69 N, ~80 W - 0 E, American and European/African coasts
+  - name: "North_Atlantic_big"
+    x_range: [212, 290]
+    y_range: [170, 248]
+    z_index: 15
+  # earlier boxes, kept as named evaluation boxes
+  - name: "North_Atlantic"
+    x_range: [253, 273]
+    y_range: [223, 248]
+    z_index: 15
+  - name: "South_Pacific"
+    x_range: [110, 151]
+    y_range: [31, 55]
+    z_index: 15
+  - name: "North_Pacific"
+    x_range: [102, 129]
+    y_range: [202, 222]
+    z_index: 15
+  - name: "Tropical_Pacific"
+    x_range: [152, 166]
+    y_range: [124, 160]
+    z_index: 15
+  # v3: new training boxes
+  # western/central tropical Pacific, 134.5 E - 148.5 W, 18.7 S - 10.6 N, 96 % ocean
+  - name: "Tropical_Pacific_W"
+    x_range: [62, 140]
+    y_range: [112, 172]
+    z_index: 15
+  # Southern Ocean, Atlantic-Indian sector, 17.5 W - 59.5 E, 70.5 - 47.4 S, 92 % ocean
+  - name: "Southern_Ocean_AI"
+    x_range: [270, 348]
+    y_range: [30, 78]
+    z_index: 15
+  training_regions: ["North_Atlantic_big", "Tropical_Pacific_W", "Southern_Ocean_AI"]   # v3
+  training_group: "multi3"     # v3: one model for all training regions (checkpoint, norms named after it)
+  target: increment            # v2b: predict the change since the newest input step (scaled per depth)
+  mask_channel: false          # v2b: mask only in the data (6 channels, as the earlier runs)
+  split: [0.70, 0.15, 0.15]                    # v2 (was 80/19/1)
+  norms_dir: "norms"                           # v2: files named <experiment>_norm_stats_<region>.npz
+  visualize_regions: true
+  window: 
+    input_steps: 4      # number of input time steps for the model (LSTM sequence len)
+    pred_steps: 1  
+  tracers:
+    paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_T_3D.nc"
+    variables: ["mytrc"]
+  neighbors:
+    velocity_paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_U_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_V_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_W_3D.nc"
+    u_var: "umo"
+    v_var: "vmo"
+    w_var: "wmo"
+  # The current data.py uses the forcing namespace. Keep the original
+  # neighbors block above for compatibility, and mirror its paths here.
+  forcing:
+    velocity_paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_U_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_V_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_W_3D.nc"
+    u_var: "umo"
+    v_var: "vmo"
+    w_var: "wmo"
+    dif_var: "difvso"
+    mld_path: "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_T_2D.nc"
+    mld_var: "mlotst"
+    use_mld_distance: true
+  vertical_levels: 75
+  coords:
+    time: "time_counter"
+    depth: "z"
+    y: "y"
+    x: "x"
+  # ---------------------------------------------------------------
+  # TRAINING DEPTH SELECTION
+  # ---------------------------------------------------------------
+  # The INPUT is always all 75 levels.
+  # This setting controls only which target levels contribute to LOSS.
+  #
+  # mode: all
+  #   -> train on every available level.
+  #
+  # mode: range
+  #   -> train only where min_depth_m <= depth <= max_depth_m.
+  #      The model still receives and predicts all 75 levels.
+  #
+  # mode: indices
+  #   -> train only the listed 0-based olevel indices.
+  depth_training:
+    mode: all          # v2: the 3-D ocean mask now removes cells below the sea floor
+    min_depth_m: 0.0
+    max_depth_m: 6000.0
+    indices: []
+
+  mask:
+    path: null
+    var: null
+  lead_time: 1 # how many steps ahead to predict
+  stride: 1 # how much to slide the window
+  norm_stats_path: "artifacts/norm_stats.json"
+  include_current_tracer: true
+  norm:
+    compute: true
+    save_path: "runs/norm_stats.json"
+  depth_stack: null  # full 75-level column; model builds +/-2 local windows internally
+model:
+  type: "c323d2km_GPU"
+  name: "S323D_FULLCOL6km_GPU"   # v3: label in logs, dashboards and file names (was ..._2km_GPU)
+  spatial_mode: "2d"
+  in_channels: null
+  hidden_channels: 64
+  enc_channels: [64, 128]
+  kernel_size: 3
+  convlstm_layers: 1
+  dropout: 0.1
+  hidden_dim: 128
+  depth_channels: 75
+  max_below: 2
+  max_above: 2
+training:
+  lambda_grad: 0.3
+  device: "cuda"
+  seed: 42
+  epochs: 120                   # v3_multi_long: upper limit (about 6.2 min per epoch with 3 regions)
+  batch_size: 4
+  num_workers: 0
+  lr: 1e-4                      # v3 (v2c: 3e-5)
+  lr_scheduler:                 # v2c: ReduceLROnPlateau on the validation loss
+    factor: 0.5
+    patience: 6                 # v3 (v2c: 3)
+    min_lr: 1e-6
+  grad_clip_norm: 1.0
+  val_fraction: 0.1
+  early_stopping: true
+  early_stopping_patience: 10   # v2b (was 5)
+  min_epochs: 0                 # v2c (v2b: 15)
+  convergence_window: 0         # v3: off, stop on validation patience only (v2c: 5)
+  convergence_tol: 0.01
+  fixed_patches_per_region: 16  # v3: training loss on fixed patches in eval mode, every epoch
+  early_stopping_delta: 1e-5
+  patch_size: 48               # v2: random 48x48 patches from the training box
+  patch_min_ocean_frac: 0.3    # v2: at least 30 % surface ocean per patch
+  val_batch_size: 1            # v2: validation runs on the whole 78x78 box
+  
+  # logging & checkpointing
+  log_dir: "./logs"
+  checkpoint_dir: "./checkpoints"
+  experiment_name: "v3_multi_long"     # own checkpoint, norms, logs
+  output_dir: "artifacts/"
+
+  # resume training from checkpoint
+  resume_from: ""  # or path to checkpoint if resuming
+
+io:
+  log_interval: 25
+  save_every: 10
+  predict_out: "runs/preds.nc"
+
+debug:
+  save_every_n_batches: 10
+  save_first_k_batches: 200
+hardware:
+  device: "auto"          # "auto", "cpu", "cuda"
+  batch_size_cpu: 20     
+  batch_size_gpu: 4      # v2: 48x48 patches (was 20 for 25x20)
+  num_workers_cpu: 4
+  num_workers_gpu: 8
+  pin_memory: true     # true for GPU
+  use_amp: true
+prediction:
+  checkpoint_region: "multi3"       # v3: the training group
+  training_regions:
+    - "multi3"
+  test_regions:
+    - "North_Atlantic_big"
+    - "Tropical_Pacific_W"
+    - "Southern_Ocean_AI"
+    - "North_Atlantic"
+    - "North_Pacific"
+    - "South_Pacific"
+    - "Tropical_Pacific"
+# v2: global evaluation on random boxes (src/evaluate_global.py), test period only
+evaluation_global:
+  n_random_regions: 50
+  box_size: 24                 # 50 non-overlapping boxes with >=50 % ocean fit at 24x24 (39 at 32x32, 45 at 28x28)
+  seed: 2026
+  min_surface_ocean_frac: 0.5
+  y_max: 270                   # stay away from the ORCA north fold (top rows)
+  exclude_training_box: true
+  sampling_exclude_regions: ["North_Atlantic_big"]   # v3: draw the same 50 boxes as v2/v2c; boxes overlapping
+                                                     # the new training boxes become kind "seen"
+  named_regions: ["North_Atlantic_big", "Tropical_Pacific_W", "Southern_Ocean_AI",
+                  "North_Atlantic", "South_Pacific", "North_Pacific", "Tropical_Pacific"]
+  plot_regions: 6              # water-column figures for this many boxes
+  out_dir: "eval/eval_global_v3_multi_long"
+predict:
+  dashboard:
+    depth_targets_m: [5, 100, 1000, 3000]   # v2b: dashboards at 4 representative depths
+    timestep: 50
+    n_steps: 10             # v3: dashboards show the first 10 test steps
+    metric_depths_m: [5, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000]   # per-level metrics in predict.py only here (+ dashboard depths)
+    depth_mode: region      # region | automatic | best | median
+    # Used only if depth_mode == region
+    #region_depth_m: 700
+

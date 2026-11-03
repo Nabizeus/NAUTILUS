@@ -1,0 +1,20 @@
+Region North_Pacific, test sample 13 (time index 2541); target time 1971-03-21 13:30:00
+
+CHECK 1: normalized input tensor (Fortran push_timestep vs training data loader)
+  channel 1 tracer: max abs diff = 0.000e+00   (values span -0.005 .. 1.000)   ok
+  channel 2 u     : max abs diff = 4.768e-07   (values span -8.794 .. 4.791)   ok
+  channel 3 v     : max abs diff = 9.537e-07   (values span -9.919 .. 9.321)   ok
+  channel 4 w     : max abs diff = 9.537e-07   (values span -9.884 .. 8.422)   ok
+  channel 5 dif   : max abs diff = 2.384e-07   (values span -0.457 .. 2.189)   ok
+  channel 6 mld   : max abs diff = 2.384e-07   (values span -0.880 .. 2.571)   ok
+
+CHECK 2: prediction (Fortran forward vs exported model in Python)
+  max abs diff, normalized units = 3.101e-06   ok
+  max abs diff, physical units   = 6.112e-10   (tracer values up to 2.719e-04)
+
+INFO: skill against the NEMO truth (normalized tracer units, ocean cells,
+      the 74 levels between 0 and 6000 m used in training)
+  RMSE of the Fortran prediction : 0.06459
+  RMSE of 'no change' baseline   : 0.00031
+
+PASS: Fortran reproduces the Python pipeline on real NEMO data.

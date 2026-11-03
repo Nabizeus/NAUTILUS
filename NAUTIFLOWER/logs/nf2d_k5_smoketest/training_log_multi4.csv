@@ -1,0 +1,7 @@
+region,epoch,train_loss,val_loss
+multi4,1,0.598248,0.568787
+multi4,2,0.398052,0.485566
+multi4,1,1.11867,nan
+multi4,2,0.0,nan
+multi4,1,0.597707,0.56964
+multi4,2,0.39834,0.483432

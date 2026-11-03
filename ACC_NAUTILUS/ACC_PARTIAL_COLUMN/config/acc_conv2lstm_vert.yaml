@@ -1,0 +1,160 @@
+data:
+  regions:
+  - name: "Pacific"
+    x_range: [67, 186] #159x268:42.612 pix²
+    y_range: [43, 271] #
+    z_centre: 35
+    z_index: 15
+    dashboard_depth_m: 35
+    mix_layer: "38"
+  - name: "Atlantic"
+    x_range: [228, 287] #99x268:26.532 pix²
+    y_range: [43, 271] #
+    z_centre: 35
+    z_index: 15
+    dashboard_depth_m: 35
+    mix_layer: "38"
+  #- name: "Indian_E"
+  #  x_range: [319, 358] #39x171:6.669 pix²
+  #  y_range: [23, 194] #
+  #  z_centre: 35
+  #  z_index: 15
+  #  dashboard_depth_m: 35
+  #  mix_layer: "38"
+  #- name: "Indian_W"
+  #  x_range: [0, 47] #47x160:7.520 pix²
+  #  y_range: [23, 183] #
+  #  z_centre: 35
+  #  z_index: 15
+  #  dashboard_depth_m: 35
+  #  mix_layer: "38"
+  #- name: "South_Pacific"
+  #  x_range: [110, 151] #41x24:984 pix²
+  #  y_range: [31, 55] #
+  #  z_centre: 35
+  #  z_index: 15
+  #  dashboard_depth_m: 35
+  #  mix_layer: "38"
+  #- name: "North_Pacific"
+  #  x_range: [102, 129] #27x20: 540 pix²
+  #  y_range: [202, 222] #
+  #  z_centre: 35 #index 
+  #  z_index: 15
+  #  dashboard_depth_m: 35
+  #  mix_layer: "38"
+  #- name: "South_Atlantic"
+  #  x_range: [241, 257] #16x27: 432 pix²
+  #  y_range: [47, 74] #
+  #  z_centre: 35 #index 45
+  #  z_index: 15
+  #  dashboard_depth_m: 35
+  #  mix_layer: "38"
+  #- name: "Tropical_Pacific"
+  #  x_range: [152, 166] #14x36: 504 pix²
+  #  y_range: [124, 160] #
+  #  z_centre: 35
+  #  z_index: 15
+  #  dashboard_depth_m: 35
+  #  mix_layer: "38"
+  visualize_regions: true
+  velocity: 3
+  n_tracers: 1
+  window: 
+    input_steps: 4      # number of input time steps for the model (LSTM sequence len)
+    pred_steps: 1  
+  tracers:
+    paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_T_3D.nc"
+    variables: ["mytrc"]
+  forcing:
+    velocity_paths:
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_U_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_V_3D.nc"
+      - "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_W_3D.nc"
+    u_var: "umo"
+    v_var: "vmo"
+    w_var: "wmo"
+    dif_var: "difvso"
+    mld_path: "/gpfs/scratch/bsc32/bsc032739/a95g/19710101/fc02/runtime/a95g_1ts_19710101_19711231_opa_grid_T_2D.nc"
+    mld_var: "mlotst"
+    use_mld_distance: true
+  vertical_levels: 5
+  coords:
+    time: "time_counter"
+    depth: "z"
+    y: "y"
+    x: "x"
+  mask:
+    path: null
+    var: null
+  lead_time: 1 # how many steps ahead to predict
+  stride: 1 # how much to slide the window
+  norm_stats_path: "artifacts/norm_stats.json"
+  include_current_tracer: true
+  norm:
+    compute: true
+    save_path: "runs/norm_stats.json"
+  depth_stack: [-2, -1, 0, 1, 2] # [-3, -2, -1, 0, 1, 2, 3]relative to selected z_index
+prediction:
+  training_regions:
+      - "Pacific"
+      - "Atlantic"      
+model:
+  type: "c323d"
+  name: "CLM_S323D_GPU" #Conv2DLSTM_GPU_Asymm Conv2LSTM
+  spatial_mode: "2d"
+  in_channels: null
+  hidden_channels: 64
+  enc_channels: [64, 128]
+  kernel_size: 3
+  convlstm_layers: 1
+  dropout: 0.25
+  hidden_dim: 128
+  depth_channels: 75
+  max_below: 2
+  max_above: 2
+training:
+  lambda_grad: 0.3
+  device: "cuda"
+  seed: 42
+  epochs: 100
+  batch_size: 32
+  num_workers: 4
+  lr: 1e-4
+  val_fraction: 0.1
+  early_stopping: true
+  early_stopping_patience: 15
+  early_stopping_delta: 1e-5
+  
+  # logging & checkpointing
+  log_dir: "./logs"
+  checkpoint_dir: "./checkpoints"
+  experiment_name: "ocean_transport_baseline"
+  output_dir: "artifacts/"
+
+  # resume training from checkpoint
+  resume_from: ""  # or path to checkpoint if resuming
+
+io:
+  log_interval: 25
+  save_every: 10
+  predict_out: "runs/preds.nc"
+
+debug:
+  save_every_n_batches: 10
+  save_first_k_batches: 200
+hardware:
+  device: "auto"          # "auto", "cpu", "cuda"
+  batch_size_cpu: 1     
+  batch_size_gpu: 20     
+  num_workers_cpu: 4
+  num_workers_gpu: 12
+  pin_memory: true     # true for GPU
+  use_amp: true
+predict:
+  dashboard:
+    timestep: 50
+    depth_mode: region      # region | automatic | best | median
+    # Used only if depth_mode == region
+    #region_depth_m: 700
+

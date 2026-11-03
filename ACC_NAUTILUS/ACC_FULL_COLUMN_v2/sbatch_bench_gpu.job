@@ -1,0 +1,25 @@
+#!/bin/bash
+#SBATCH --job-name=NAUTILUS_benchgpu
+#SBATCH -D .
+#SBATCH --output=server/benchgpu_%j.out
+#SBATCH --error=server/benchgpu_%j.err
+#SBATCH --ntasks=1
+#SBATCH --time=01:30:00
+#SBATCH --account=bsc32
+#SBATCH --qos=acc_debug
+#SBATCH --cpus-per-task=20
+#SBATCH --gres=gpu:1
+# v6: GPU inference speed of the reference (v5_k5_snap) and the light models A, B, C, E,
+# random weights, global ORCA1 domain, whole domain and tiles, 1 and 24 tracers.
+module purge
+module load PyYAML/6.0.1-GCCcore-13.2.0 tqdm/4.66.2-GCCcore-13.2.0 PyTorch/2.3.0-foss-2023b-CUDA-12.4.0 imageio/2.34.1-gfbf-2023b xarray/2024.5.0-gfbf-2023b-Python-3.11.5 SciPy-bundle/2023.11-gfbf-2023b
+export PYTHONPATH="$HOME/python_extra:$PYTHONPATH"
+export PYTHONUNBUFFERED=1 OMP_NUM_THREADS=20
+nvidia-smi --query-gpu=name,memory.total --format=csv
+echo "git commit: $(git rev-parse --short HEAD 2>/dev/null)"
+for M in v5_k5_snap v6_k5_h64 v6_k5_ds128 v6_k5_tc64 v6_k5_col256; do
+    echo "######## $(date +%H:%M:%S) ${M}"
+    python -m src.benchmark_inference --config config/nautilus_${M}.yaml --checkpoint none --devices cuda \
+        --tracers 1 24 --tiles 0 128 64 --halo 8 --out logs/bench_gpu_${M}_${SLURM_JOB_ID}.json
+done
+echo "######## $(date +%H:%M:%S) DONE"
